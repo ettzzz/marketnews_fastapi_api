@@ -12,7 +12,9 @@ from scraper._eastmoney import eastmoneyScrapper
 from utils.datetime_tools import date_range
 from config.static_vars import ROOT
 
-
+'''
+if __name__ blabla?
+'''
 
 
 

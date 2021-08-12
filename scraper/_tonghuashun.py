@@ -18,6 +18,7 @@ class tonghuashunScrapper():
         fid = news_dict['id']
         content = news_dict['title'].strip() + ',' + news_dict['digest'].strip()
         timestamp = news_dict['ctime']
+        # TODO timestamp is 2020-02-02 20:20:20?
         tag = ','.join(
             [j['name'] for j in news_dict['tags']] + 
             [i['name'] for i in news_dict['tagInfo']])

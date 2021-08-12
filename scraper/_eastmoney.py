@@ -20,7 +20,8 @@ class eastmoneyScrapper():
     def _data_cleaner(self, news_dict):
         fid = news_dict['id']
         content = news_dict['digest'].strip()
-        timestamp = timestamper(news_dict['showtime'], self.timestamp_format)
+        # timestamp = timestamper(news_dict['showtime'], self.timestamp_format)
+        timestamp = news_dict['showtime']
         tag = news_dict['column'] # not sure what it stands for.
         
         code = re.findall(r'[(]([\d]{6})[)]', content)

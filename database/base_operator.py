@@ -2,6 +2,28 @@
 
 import sqlite3
 import traceback
+from functools import wraps
+
+
+# def redis_pipeline_wrapper(func):
+#     @wraps(func)
+#     def wrapper(self, *args, **kwargs):
+#         conn = redis.StrictRedis(**REDIS_CONFIG)
+#         pipe = conn.pipeline(transaction=True)
+#         results = func(self, *args, **kwargs)
+#         pipe.execute()
+#         return results
+#     return wrapper
+
+def sqlite3_pipeline_wrapper(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        conn = self.on()
+        results = func(self, *args, **kwargs)
+        self.off(conn)
+        return results
+    return wrapper
+
 
 
 class sqliteBaseOperator():

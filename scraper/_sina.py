@@ -20,7 +20,8 @@ class sinaScrapper():
     def _data_cleaner(self, news_dict):
         fid = news_dict['id']
         content = news_dict['rich_text'].strip()
-        timestamp = str(timestamper(news_dict['create_time'], self.timestamp_format))
+        # timestamp = str(timestamper(news_dict['create_time'], self.timestamp_format))
+        timestamp = news_dict['create_time']
         tag = ','.join(list(map(lambda x: x['name'], news_dict['tag'])))
         
         try:

@@ -31,6 +31,7 @@ class yuncaijingScrapper():
         fid = news_dict['id']
         content = news_dict['title'].strip() + ',' + news_dict['description'].strip()
         timestamp = news_dict['inputtime']
+        # TODO timestamp is 2020-02-02 20:20:20?
         tag = news_dict['thmtags'].replace(' ', ',')
         code = self._get_code(news_dict)
         
