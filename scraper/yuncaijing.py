@@ -3,6 +3,8 @@
 import requests
 import traceback
 
+from utils.datetime_tools import reverse_timestamper
+
 class yuncaijingScrapper():
     def __init__(self):
         self.base_url = 'https://www.yuncaijing.com/news/get_realtime_news/yapi/ajax.html'
@@ -30,15 +32,15 @@ class yuncaijingScrapper():
     def _data_cleaner(self, news_dict):
         fid = news_dict['id']
         content = news_dict['title'].strip() + ',' + news_dict['description'].strip()
+        # timestamp = reverse_timestamper(news_dict['inputtime']) # 10digit to DATE_TIME_FORMAT
         timestamp = news_dict['inputtime']
-        # TODO timestamp is 2020-02-02 20:20:20?
         tag = news_dict['thmtags'].replace(' ', ',')
         code = self._get_code(news_dict)
         
         return {'fid':fid, 
                 'source':'yuncaijing',
                 'content':content, 
-                'timestamp':timestamp, 
+                'timestamp':timestamp,
                 'tag':tag, 
                 'code':code, 
                 'industry':'', 
@@ -84,6 +86,49 @@ class yuncaijingScrapper():
                   \n {}\
                   \n'.format(e))
             return []
+        
+        
+        
+if __name__ == "__main__":
+    ys = yuncaijingScrapper()
+    dates = date_range('2017-01-01', '2019-10-26')[::-1]
+    
+    for date in dates:
+        print('yuncaijing', date)
+        year = date[:4]
+        page = 1
+        ycj_key = True
+        append_news = []
+        skip = 0
+        while ycj_key:
+            ycj_params = ys.get_params(page, date)    
+            ycj_news = ys.get_news(ycj_params, False)
+            time.sleep(random.uniform(2, 4))
+            
+            if not ycj_news:
+                print('yuncaijing skipped one page')
+                page += 1
+                skip += 1
+                continue
+            
+            if skip >= 100:
+                break
+            
+            for i in ycj_news:
+                struct_time = time.localtime(int(i['timestamp']))
+                time_str = time.strftime('%Y-%m-%d', struct_time)
+                if time_str != date:
+                    ycj_key = False
+                    break
+                append_news.append(tuple(i.values()))
+            page += 1
+        
+        conn.executemany("INSERT INTO news_{} ({}) VALUES ({});".format(
+                        year,
+                        ','.join(list(i.keys())),
+                        ','.join(['?']*len(i))),
+                        append_news)
+        conn.commit()
 
 
 

@@ -54,21 +54,21 @@ class sqliteBaseOperator():
 
     def table_info(self, table_name):
         result = self.fetch_by_command(
-            'PRAGMA table_info({});'.format(table_name)
+            "PRAGMA table_info('{}');".format(table_name)
             )
         return result
 
 
     def delete_table(self, table_name):
         conn = self.on()
-        conn.execute("DELETE FROM {};".format(table_name))
+        conn.execute("DELETE FROM '{}';".format(table_name))
         conn.execute("UPDATE sqlite_sequence SET seq=0 WHERE name='{}';".format(table_name))
         self.off(conn)
 
 
     def drop_table(self, table_name):
         conn = self.on()
-        conn.execute("DROP TABLE {};".format(table_name))
+        conn.execute("DROP TABLE '{}';".format(table_name))
         self.off(conn)
 
 
@@ -77,7 +77,7 @@ class sqliteBaseOperator():
         for field_name, addition_list in field_dict.items():
             field_part.append(field_name + ' ' + ' '.join(addition_list))
 
-        sql_command = '''CREATE TABLE IF NOT EXISTS {}(\
+        sql_command = '''CREATE TABLE IF NOT EXISTS '{}'(\
             uid INTEGER PRIMARY KEY AUTOINCREMENT,\
             {});'''.format(table_name, ','.join(field_part))
 
@@ -85,7 +85,7 @@ class sqliteBaseOperator():
 
 
     def insert_batch_sql_command(self, table_name, fields):
-        sql_command = "INSERT INTO {} ({}) VALUES ({});".format(
+        sql_command = "INSERT INTO '{}' ({}) VALUES ({});".format(
             table_name,
             ','.join(fields),
             ','.join(['?']*len(fields)),
@@ -94,7 +94,7 @@ class sqliteBaseOperator():
 
 
     def add_index_sql_command(self, table_name, index_field):
-        sql_command = "CREATE UNIQUE INDEX {} ON {} ({});".format(
+        sql_command = "CREATE UNIQUE INDEX {} ON '{}' ({});".format(
             index_field + '_index',
             table_name,
             index_field

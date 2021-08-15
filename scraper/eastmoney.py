@@ -4,7 +4,7 @@ import requests
 import re
 
 from utils.common_tools import get_random_tose
-from utils.datetime_tools import get_now, timestamper
+from utils.datetime_tools import get_now, timestamper, DATE_TIME_FORMAT
 
 class eastmoneyScrapper():
     def __init__(self):
@@ -14,14 +14,14 @@ class eastmoneyScrapper():
             'Referer': 'https://kuaixun.eastmoney.com/',
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:79.0) Gecko/20100101 Firefox/79.0'
         }
-        self.timestamp_format = '%Y-%m-%d %H:%M:%S'
+        self.timestamp_format = DATE_TIME_FORMAT
         
         
     def _data_cleaner(self, news_dict):
         fid = news_dict['id']
         content = news_dict['digest'].strip()
-        # timestamp = timestamper(news_dict['showtime'], self.timestamp_format)
-        timestamp = news_dict['showtime']
+        # timestamp = news_dict['showtime'] # already DATE_TIME_FORMAT
+        timestamp = str(timestamper(news_dict['create_time'], self.timestamp_format))
         tag = news_dict['column'] # not sure what it stands for.
         
         code = re.findall(r'[(]([\d]{6})[)]', content)

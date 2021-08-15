@@ -9,7 +9,9 @@ Created on Wed Aug 11 13:39:11 2021
 import os
 
 from .base_operator import sqliteBaseOperator
-from config.static_vars import NEWS_HISTORY_PATH
+from config.static_vars import NEWS_HISTORY_PATH, NEWS_ID_ZERO
+from utils.datetime_tools import get_today_date
+
 
 '''
 1.按日期来，还是得存一下原语料数据的
@@ -21,11 +23,6 @@ from config.static_vars import NEWS_HISTORY_PATH
 实时的情绪池：在redis里，5分钟新闻爬下来->先分析一波，更新到redis里
 新闻存在今天的表里，交易时段内每隔30分钟总表就读取一个redis生成一条新纪录
 '''
-
-def sql_friendly_mapper(whatever, token='-'):
-    return whatever.replace(token, '_')
-
-
 
 class newsDatabaseOperator(sqliteBaseOperator):
     def __init__(self, sql_dbfile_path = NEWS_HISTORY_PATH):
@@ -44,7 +41,8 @@ class newsDatabaseOperator(sqliteBaseOperator):
                 'fid': ['INTEGER'],
                 'source': ['TEXT'],
                 'content': ['TEXT'],
-                'time': ['TIME'],
+                'timestamp': ['TEXT'],
+                'tag': ['TEXT'],
                 'code': ['TEXT'],
                 'industry': ['TEXT'],
                 'info': ['TEXT'],
@@ -73,16 +71,18 @@ class newsDatabaseOperator(sqliteBaseOperator):
 
     
     # @sqlite3_pipeline_wrapper
-    def insert_news_data(self, fetched, date_str):
-        table_name = sql_friendly_mapper(date_str, token='-')
+    def insert_news_data(self, fetched, year_str, source):
+        table_name = '{}_{}'.format(source, year_str)
         fields = list(self.news_fields['daily_news'].keys())
         
         conn = self.on()
-        conn.execute(
-            self.create_table_sql_command(
-                table_name,
-                self.stock_fields['daily_news'])
-            )
+        if not self.table_info(table_name):
+            conn.execute(
+                self.create_table_sql_command(
+                    table_name,
+                    self.news_fields['daily_news'])
+                )
+            
         conn.executemany(
             self.insert_batch_sql_command(table_name, fields), fetched
             )
@@ -95,11 +95,32 @@ class newsDatabaseOperator(sqliteBaseOperator):
         
     def get_feature_weights(self, start_date, end_date):
         feature_weights = self.fetch_by_command(
-            "SELECT * FROM {} WHERE date BETWEEN '{}' AND '{}';".format(
+            "SELECT * FROM '{}' WHERE date BETWEEN '{}' AND '{}';".format(
                 self.init_table_names['feature'],
                 start_date,
                 end_date
                 )
             )
         return feature_weights
+    
+    
+    def get_latest_news_id(self, source = 'sina'):
+        today = get_today_date()
+        table_name = '{}_{}'.format(source, today[:4]) # source + year
+        if not self.table_info(table_name):
+            table_name = '{}_{}'.format(source, str(int(today[:4]) - 1))
+        
+        # TODO: table name including source should be considered
+        latest_news_id = self.fetch_by_command(
+            "SELECT MAX(fid) FROM '{}' WHERE source = '{}';".format(
+                table_name,
+                source
+                )
+            )
+        return latest_news_id[0][0] # it should be an int
+    
+    
+    def get_zero_news_id(self, source = 'sina'):
+        return NEWS_ID_ZERO[source]
+    
 

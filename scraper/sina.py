@@ -3,7 +3,7 @@
 import requests
 import re
 
-from utils.datetime_tools import timestamper
+from utils.datetime_tools import timestamper, DATE_TIME_FORMAT
 
 class sinaScrapper():
     def __init__(self):
@@ -13,19 +13,20 @@ class sinaScrapper():
             'Referer': 'http://finance.sina.com.cn/7x24/',
             'Host': 'zhibo.sina.com.cn'
             }
-        self.timestamp_format = '%Y-%m-%d %H:%M:%S'
+        self.timestamp_format = DATE_TIME_FORMAT
         self.callback = 'jQuery0'
 
 
     def _data_cleaner(self, news_dict):
         fid = news_dict['id']
         content = news_dict['rich_text'].strip()
-        # timestamp = str(timestamper(news_dict['create_time'], self.timestamp_format))
-        timestamp = news_dict['create_time']
+        timestamp = str(timestamper(news_dict['create_time'], self.timestamp_format))
+        # timestamp = news_dict['create_time']
         tag = ','.join(list(map(lambda x: x['name'], news_dict['tag'])))
         
         try:
-            ext = news_dict['ext'].replace('true', 'True').replace('false', 'False')
+            # ext = news_dict['ext'].replace('true', 'True').replace('false', 'False')
+            ext = news_dict['ext']
             ext = eval(ext)
             code = ','.join(list(map(lambda x: x['symbol'], ext['stocks'])))
         except:
@@ -34,7 +35,9 @@ class sinaScrapper():
         return {'fid':fid, 
                 'source':'sina',
                 'content':content, 
-                'timestamp':timestamp, 
+                'timestamp': timestamp,
+                # 'date': timestamp.split(' ')[0],
+                # 'time': timestamp.split(' ')[1],
                 'tag':tag, 
                 'code':code, 
                 'industry':'', 
@@ -93,6 +96,7 @@ class sinaScrapper():
                 )
             if r.status_code == 200:
                 text = re.findall(self.callback + r'\((.*)\);}catch', r.text)[0]
+                text = text.replace('true', 'True').replace('false', 'False')
                 content = eval(text)['result']['data']['feed']
                 if standard:
                     cleaned_list = [self._data_cleaner(i) for i in content['list']]
@@ -107,4 +111,42 @@ class sinaScrapper():
                   \n'.format(e))
             return {}
         
+
+if __name__ == "__main__":
+    import pandas as pd
+    import time
+    import random
+    from database.news_operator import newsDatabaseOperator
+    from utils.datetime_tools import reverse_timestamper
+    
+    ss = sinaScrapper()
+    source = 'sina'
+    his_operator = newsDatabaseOperator()
+    news_fields = list(his_operator.news_fields['daily_news'].keys())
+    min_id = his_operator.get_zero_news_id(source=source)
+    # min_id = his_operator.get_latest_news_id(source=source) 
+    
+    init_params = ss.get_params(_type=0)
+    news = ss.get_news(init_params) 
+    
+    while news['max_id'] > min_id:
+        df = pd.DataFrame(news['list'][::-1]) # reverse sequence for sina
+        df = df[(df['fid'] > min_id)]
+        
+        df['year'] = df['timestamp'].apply(lambda row: reverse_timestamper(row)[:4])
+        years = df['year'].value_counts()
+        print(years)
+        for year, _count in df['year'].value_counts().items():
+            fetched = df[news_fields][(df['year'] == year)].to_numpy()
+            his_operator.insert_news_data(fetched, year, source)
+          
+        params = ss.get_params(_id = news['min_id'] - 1, _type = 1)
+        news = ss.get_news(params)
+        if len(news) == 0:
+            news = ss.get_news(params) # dumb way to re request
+        time.sleep(random.random() + random.randint(1,2))
+        
+    
+        
+    
         

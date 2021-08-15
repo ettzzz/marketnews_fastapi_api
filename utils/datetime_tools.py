@@ -5,6 +5,7 @@ import datetime
 
 DATE_FORMAT = "%Y-%m-%d"
 TIME_FORMAT = "%H:%M:%S"
+DATE_TIME_FORMAT = DATE_FORMAT + ' ' + TIME_FORMAT
 
 def struct_timestr(timestr, _format = DATE_FORMAT):
     structed_time = time.strptime(timestr, _format)
@@ -47,7 +48,7 @@ def timestamper(time_str, _format=DATE_FORMAT):
         structed_time = struct_timestr(time_str, _format)
         return int(time.mktime(structed_time))
     
-def reverse_timestamper(ten_digit_str, _format=TIME_FORMAT):
+def reverse_timestamper(ten_digit_str, _format=DATE_TIME_FORMAT):
     structed_time = time.localtime(int(ten_digit_str))
     time_str = time.strftime(_format, structed_time)
     return time_str
