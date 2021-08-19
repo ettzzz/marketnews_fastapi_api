@@ -24,8 +24,9 @@ from utils.datetime_tools import get_today_date
 新闻存在今天的表里，交易时段内每隔30分钟总表就读取一个redis生成一条新纪录
 '''
 
+
 class newsDatabaseOperator(sqliteBaseOperator):
-    def __init__(self, sql_dbfile_path = NEWS_HISTORY_PATH):
+    def __init__(self, sql_dbfile_path=NEWS_HISTORY_PATH):
 
         self.init_table_names = {
             'feature': 'news_weight',
@@ -48,7 +49,6 @@ class newsDatabaseOperator(sqliteBaseOperator):
                 'info': ['TEXT'],
                 'comment': ['TEXT'],
             },
-            
         }
 
         if not os.path.exists(sql_dbfile_path):
@@ -69,58 +69,52 @@ class newsDatabaseOperator(sqliteBaseOperator):
         for t in table_names:
             self.delete_table(t)
 
-    
     # @sqlite3_pipeline_wrapper
+
     def insert_news_data(self, fetched, year_str, source):
         table_name = '{}_{}'.format(source, year_str)
         fields = list(self.news_fields['daily_news'].keys())
-        
+
         conn = self.on()
         if not self.table_info(table_name):
             conn.execute(
                 self.create_table_sql_command(
                     table_name,
                     self.news_fields['daily_news'])
-                )
-            
+            )
+
         conn.executemany(
             self.insert_batch_sql_command(table_name, fields), fetched
-            )
+        )
         self.off(conn)
-        
-        
+
     def insert_weight_data(self):
         pass
-    
-        
+
     def get_feature_weights(self, start_date, end_date):
         feature_weights = self.fetch_by_command(
             "SELECT * FROM '{}' WHERE date BETWEEN '{}' AND '{}';".format(
                 self.init_table_names['feature'],
                 start_date,
                 end_date
-                )
             )
+        )
         return feature_weights
-    
-    
-    def get_latest_news_id(self, source = 'sina'):
+
+    def get_latest_news_id(self, source='sina'):
         today = get_today_date()
-        table_name = '{}_{}'.format(source, today[:4]) # source + year
+        table_name = '{}_{}'.format(source, today[:4])  # source + year
         if not self.table_info(table_name):
             table_name = '{}_{}'.format(source, str(int(today[:4]) - 1))
-        
+
         # TODO: table name including source should be considered
         latest_news_id = self.fetch_by_command(
             "SELECT MAX(fid) FROM '{}' WHERE source = '{}';".format(
                 table_name,
                 source
-                )
             )
-        return latest_news_id[0][0] # it should be an int
-    
-    
-    def get_zero_news_id(self, source = 'sina'):
-        return NEWS_ID_ZERO[source]
-    
+        )
+        return latest_news_id[0][0]  # it should be an int
 
+    def get_zero_news_id(self, source='sina'):
+        return NEWS_ID_ZERO[source]
