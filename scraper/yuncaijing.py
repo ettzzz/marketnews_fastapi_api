@@ -75,11 +75,14 @@ class yuncaijingScrapper():
                 url=self.base_url,
                 data=params,
                 headers=headers)
-            if r.status_code == 200 and r.json()['error_code'] == '0':
-                content = r.json()['data']
-                if standard:
-                    content = [self._data_cleaner(i) for i in content]
-                return content
+            if r.status_code == 200:
+                if r.json()['error_code'] == '0':
+                    content = r.json()['data']
+                    if standard:
+                        content = [self._data_cleaner(i) for i in content]
+                    return content
+                else:
+                    return [] # page more than capacity
             else:
                 print('from yuncaijingScrapper: Requesting failed! check url \n{}'.format(r.url))
                 return []
@@ -100,42 +103,36 @@ class yuncaijingScrapper():
 
 
 if __name__ == "__main__":
+    import pandas as pd
+    import time
+    import random
+    from database.news_operator import newsDatabaseOperator
+    from utils.datetime_tools import date_range
+    from config.static_vars import DAY_ZERO
+    source = 'ycj'
+    his_operator = newsDatabaseOperator()
+    news_fields = list(his_operator.news_fields['daily_news'].keys())
+    
     ys = yuncaijingScrapper()
-    dates = date_range('2017-01-01', '2019-10-26')[::-1]
+    dates = date_range(DAY_ZERO, '2021-08-15')[::-1]
 
     for date in dates:
         print('yuncaijing', date)
         year = date[:4]
         page = 1
-        ycj_key = True
-        append_news = []
-        skip = 0
-        while ycj_key:
+        news = []
+        while True:
             ycj_params = ys.get_params(page, date)
-            ycj_news = ys.get_news(ycj_params, False)
-            time.sleep(random.uniform(2, 4))
-
+            ycj_news = ys.get_news(ycj_params)
             if not ycj_news:
-                print('yuncaijing skipped one page')
-                page += 1
-                skip += 1
-                continue
-
-            if skip >= 100:
                 break
-
-            for i in ycj_news:
-                struct_time = time.localtime(int(i['timestamp']))
-                time_str = time.strftime('%Y-%m-%d', struct_time)
-                if time_str != date:
-                    ycj_key = False
-                    break
-                append_news.append(tuple(i.values()))
+            news += ycj_news
             page += 1
+            time.sleep(random.random() + random.randint(1,2))
+            
+        df = pd.DataFrame(news[::-1])  # reverse sequence for yuncaijing
+        fetched = df[news_fields].to_numpy()
+        his_operator.insert_news_data(fetched, year, source)
+    
+    
 
-        conn.executemany("INSERT INTO news_{} ({}) VALUES ({});".format(
-            year,
-            ','.join(list(i.keys())),
-            ','.join(['?']*len(i))),
-            append_news)
-        conn.commit()

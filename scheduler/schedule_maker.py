@@ -55,27 +55,41 @@ def live_sina_news():
         his_operator.insert_news_data(fetched, year, source)
 
 
-# def live_yuncaijing_news():
-#     source = 'yuncaijing'
-#     # max_id = his_operator.get_latest_news_id(source=source)
-#     today = get_today_date()
-#     params = ys.get_params()
-#     news = ys.get_news(params)
-#     filtered_news = ys.get_filtered_news(news)
+def live_yuncaijing_news():
+    source = 'ycj'
+    max_id = his_operator.get_latest_news_id(source=source)
+    today = get_today_date()
+    params = ys.get_params(page=1, date=today)
+    news = ys.get_news(params)
+    filtered_news = ys.get_filtered_news(news)
 
-#     df = pd.DataFrame(filtered_news[::-1])  # reverse sequence for sina
-#     df = df[(df['fid'] > max_id)]
-#     if len(df) == 0:
-#         return
+    df = pd.DataFrame(filtered_news[::-1])
+    df = df[(df['fid'] > max_id)]
+    if len(df) == 0:
+        return
 
-#     df['weight'] = df['content'].apply(lambda row: insula.get_news_sentiment(row))
-#     # watcher.update_code_weight()
-#     # his_operator.insert_weight_data()
+    df['score'] = df['content'].apply(lambda row: insula.get_news_sentiment(row))
+    weights_dict = dict()
+    for idx, row in df.iterrows():
+        codes = row['code']
+        for pseudo_code in codes:
+            if pseudo_code.startswith('6'):
+                real_code = 'sh.' + pseudo_code
+            else:
+                real_code = 'sz.' + pseudo_code
+            weights_dict[real_code] = row['score']
+        
+    watcher.update_code_weight(weights_dict)
+    
+    fetched = df[news_fields].to_numpy()
+    year = today[:4]
+    his_operator.insert_news_data(fetched, year, source)
 
-#     df['year'] = df['timestamp'].apply(lambda row: reverse_timestamper(row)[:4])
-#     for year, _count in df['year'].value_counts().items():
-#         fetched = df[news_fields][(df['year'] == year)].to_numpy()
-#         his_operator.insert_news_data(fetched, year, source)
 
+def sync_weight_data():
+    pass
 
-scheduler.add_job(func=live_sina_news, trigger='cron', minute='*/5')
+for f in [live_sina_news, live_yuncaijing_news]:
+    scheduler.add_job(func=f, trigger='cron', hour='7-22', minute='*/5')
+    scheduler.add_job(func=f, trigger='cron', hour='0-6,23', minute='*/30')
+    

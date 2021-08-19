@@ -124,13 +124,13 @@ if __name__ == "__main__":
     from database.news_operator import newsDatabaseOperator
     from utils.datetime_tools import reverse_timestamper
 
-    ss = sinaScrapper()
     source = 'sina'
     his_operator = newsDatabaseOperator()
     news_fields = list(his_operator.news_fields['daily_news'].keys())
     min_id = his_operator.get_zero_news_id(source=source)
     # min_id = his_operator.get_latest_news_id(source=source)
-
+    
+    ss = sinaScrapper()
     init_params = ss.get_params(_type=0)
     news = ss.get_news(init_params)
 
