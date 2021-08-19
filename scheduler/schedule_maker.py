@@ -37,14 +37,14 @@ def live_sina_news():
     if len(df) == 0:
         return
 
-    df['weight'] = df['content'].apply(lambda row: insula.get_news_sentiment(row))
+    df['score'] = df['content'].apply(lambda row: insula.get_news_sentiment(row))
     weights_dict = dict()
     for idx, row in df.iterrows():
         codes = row['code'].split(',')
         for pseudo_code in codes:
             if pseudo_code.startswith('s') and len(pseudo_code) == 8:
                 real_code = pseudo_code[:2] + '.' + pseudo_code[2:]
-                weights_dict[real_code] = row['weight']
+                weights_dict[real_code] = row['score']
 
     watcher.update_code_weight(weights_dict)  # {'code': 'score'}
     # his_operator.insert_weight_data() # this mission could be done during night
