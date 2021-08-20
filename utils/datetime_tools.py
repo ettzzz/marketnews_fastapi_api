@@ -50,8 +50,8 @@ def timestamper(time_str, _format=DATE_FORMAT):
         return int(time.mktime(structed_time))
 
 
-def reverse_timestamper(ten_digit_str, _format=DATE_TIME_FORMAT):
-    structed_time = time.localtime(int(ten_digit_str))
+def reverse_timestamper(ten_digit, _format=DATE_TIME_FORMAT):
+    structed_time = time.localtime(int(ten_digit))
     time_str = time.strftime(_format, structed_time)
     return time_str
 

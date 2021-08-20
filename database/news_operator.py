@@ -10,7 +10,7 @@ import os
 
 from .base_operator import sqliteBaseOperator
 from config.static_vars import NEWS_HISTORY_PATH, NEWS_ID_ZERO
-from utils.datetime_tools import get_today_date
+from utils.datetime_tools import get_today_date, timestamper
 
 
 '''
@@ -109,6 +109,21 @@ class newsDatabaseOperator(sqliteBaseOperator):
             )
         )
         return feature_weights
+
+    def _get_news(self, source, date):
+        year = date[:4]
+        table_name = '{}_{}'.format(source, year)
+        start_timestamp = timestamper(date + ' ' + '00:00:00', '%Y-%m-%d %H:%M:%S')
+        end_timestamp = timestamper(date + ' ' + '23:59:59', '%Y-%m-%d %H:%M:%S')
+
+        news = self.fetch_by_command(
+            "SELECT * FROM '{}' WHERE timestamp BETWEEN {} AND {};".format(
+                table_name,
+                start_timestamp,
+                end_timestamp
+            )
+        )
+        return news
 
     def get_latest_news_id(self, source='sina'):
         today = get_today_date()
