@@ -3,7 +3,7 @@
 import requests
 import traceback
 
-from utils.datetime_tools import reverse_timestamper
+from utils.datetime_tools import reverse_timestamper,timestamper
 
 
 class yuncaijingScrapper():
@@ -35,7 +35,7 @@ class yuncaijingScrapper():
         return ','.join(codes)
 
     def _data_cleaner(self, news_dict):
-        fid = news_dict['id']
+        fid = int(news_dict['id'])
         content = news_dict['title'].strip() + ',' + news_dict['description'].strip()
         # timestamp = reverse_timestamper(news_dict['inputtime']) # 10digit to DATE_TIME_FORMAT
         timestamp = news_dict['inputtime']
@@ -114,7 +114,9 @@ if __name__ == "__main__":
     news_fields = list(his_operator.news_fields['daily_news'].keys())
     
     ys = yuncaijingScrapper()
-    dates = date_range(DAY_ZERO, '2021-08-15')[::-1]
+    dates = date_range(DAY_ZERO, '2020-05-10')[::-1]
+    
+    min_id = 14327756
 
     for date in dates:
         print('yuncaijing', date)
@@ -131,6 +133,7 @@ if __name__ == "__main__":
             time.sleep(random.random() + random.randint(1,2))
             
         df = pd.DataFrame(news[::-1])  # reverse sequence for yuncaijing
+        df = df[(df['fid'] < min_id)]
         fetched = df[news_fields].to_numpy()
         his_operator.insert_news_data(fetched, year, source)
     
