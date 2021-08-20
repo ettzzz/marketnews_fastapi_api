@@ -14,14 +14,8 @@ from utils.datetime_tools import get_today_date
 
 
 '''
-1.按日期来，还是得存一下原语料数据的
-2.如果有多个来源的话 应该放在同一个表里
 3.来一个总表，分date，timestamp，weight，训练时候主要读取这个，
 两个column，一个是code的顺序，一个是500个数
-
-
-实时的情绪池：在redis里，5分钟新闻爬下来->先分析一波，更新到redis里
-新闻存在今天的表里，交易时段内每隔30分钟总表就读取一个redis生成一条新纪录
 '''
 
 
@@ -88,8 +82,23 @@ class newsDatabaseOperator(sqliteBaseOperator):
         )
         self.off(conn)
 
-    def insert_weight_data(self):
-        pass
+    def insert_weight_data(self, weights_dict, date_time_str):
+        date, _time = date_time_str.split(' ')
+        fields = list(self.news_fields['feature'].keys())
+        fetched = [[
+            date,
+            _time,
+            ','.join(weights_dict.values()),
+            ','.join(weights_dict.keys())
+        ]]
+        conn = self.on()
+        conn.executemany(
+            self.insert_batch_sql_command(
+                self.init_table_names['feature'], fields
+            ),
+            fetched
+        )
+        self.off(conn)
 
     def get_feature_weights(self, start_date, end_date):
         feature_weights = self.fetch_by_command(
@@ -107,7 +116,6 @@ class newsDatabaseOperator(sqliteBaseOperator):
         if not self.table_info(table_name):
             table_name = '{}_{}'.format(source, str(int(today[:4]) - 1))
 
-        # TODO: table name including source should be considered
         latest_news_id = self.fetch_by_command(
             "SELECT MAX(fid) FROM '{}' WHERE source = '{}';".format(
                 table_name,

@@ -19,9 +19,22 @@ class SCD():
 
     def __init__(self):
         self.insula = pipeline(**HUGGING_CONFIG)
-        self.weight_decay = 1
 
-    def get_news_sentiment(self, news_str):
+    def weight_mapping(self, weight_score):
+        '''
+        weight_score: -1~1
+        '''
+        x = weight_score
+        return round(1-(1-x)*2, 4)
+
+    def weight_decay(self, weight_score, decay_count):
+        decay = round(weight_score * (0.7**decay_count), 2)
+        if abs(decay) < 0.1:
+            return 0
+        else:
+            return decay
+
+    def get_news_sentiment(self, news_str, is_mapping=True):
         try:
             results = self.insula(news_str)[0]
             negative_index = -1 if results['label'] == 'negative' else 1
@@ -29,4 +42,7 @@ class SCD():
         except:
             sentimental_index = 0  # sometimes it's just throw an error
 
-        return round(sentimental_index * self.weight_decay, 4)
+        if is_mapping:
+            return self.weight_mapping(sentimental_index)
+        else:
+            return round(sentimental_index, 4)

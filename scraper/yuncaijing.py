@@ -3,7 +3,7 @@
 import requests
 import traceback
 
-from utils.datetime_tools import reverse_timestamper,timestamper
+from utils.datetime_tools import reverse_timestamper, timestamper
 
 
 class yuncaijingScrapper():
@@ -26,12 +26,6 @@ class yuncaijingScrapper():
             for j in news_dict['stktags']:
                 codes.append(j['code'])
 
-        # whole_codes = []
-        # for c in codes:
-        #     if c.startswith('6'):
-        #         whole_codes.append('sh.{}'.format(c))
-        #     else:
-        #         whole_codes.append('sz.{}'.format(c))
         return ','.join(codes)
 
     def _data_cleaner(self, news_dict):
@@ -82,7 +76,7 @@ class yuncaijingScrapper():
                         content = [self._data_cleaner(i) for i in content]
                     return content
                 else:
-                    return [] # page more than capacity
+                    return []  # page more than capacity
             else:
                 print('from yuncaijingScrapper: Requesting failed! check url \n{}'.format(r.url))
                 return []
@@ -107,16 +101,15 @@ if __name__ == "__main__":
     import time
     import random
     from database.news_operator import newsDatabaseOperator
-    from utils.datetime_tools import date_range
+    from utils.datetime_tools import date_range_generator, get_today_date
     from config.static_vars import DAY_ZERO
     source = 'ycj'
+    today = get_today_date()
     his_operator = newsDatabaseOperator()
     news_fields = list(his_operator.news_fields['daily_news'].keys())
-    
+
     ys = yuncaijingScrapper()
-    dates = date_range(DAY_ZERO, '2020-05-10')[::-1]
-    
-    min_id = 14327756
+    dates = date_range_generator(DAY_ZERO, today, is_reverse=True)
 
     for date in dates:
         print('yuncaijing', date)
@@ -130,12 +123,9 @@ if __name__ == "__main__":
                 break
             news += ycj_news
             page += 1
-            time.sleep(random.random() + random.randint(1,2))
-            
+            time.sleep(random.random() + random.randint(1, 2))
+
         df = pd.DataFrame(news[::-1])  # reverse sequence for yuncaijing
-        df = df[(df['fid'] < min_id)]
+        # df = df[(df['fid'] < min_id)]
         fetched = df[news_fields].to_numpy()
         his_operator.insert_news_data(fetched, year, source)
-    
-    
-

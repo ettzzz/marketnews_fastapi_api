@@ -13,7 +13,7 @@ from database.news_operator import newsDatabaseOperator
 from database.redis_watcher import redisWatcher
 from scraper.sina import sinaScrapper
 from scraper.yuncaijing import yuncaijingScrapper
-from utils.datetime_tools import reverse_timestamper, get_today_date
+from utils.datetime_tools import reverse_timestamper, get_today_date, get_now
 
 scheduler = BackgroundScheduler()
 watcher = redisWatcher()
@@ -47,7 +47,6 @@ def live_sina_news():
                 weights_dict[real_code] = row['score']
 
     watcher.update_code_weight(weights_dict)  # {'code': 'score'}
-    # his_operator.insert_weight_data() # this mission could be done during night
 
     df['year'] = df['timestamp'].apply(lambda row: reverse_timestamper(row)[:4])
     for year, _count in df['year'].value_counts().items():
@@ -78,18 +77,33 @@ def live_yuncaijing_news():
             else:
                 real_code = 'sz.' + pseudo_code
             weights_dict[real_code] = row['score']
-        
+
     watcher.update_code_weight(weights_dict)
-    
+
     fetched = df[news_fields].to_numpy()
     year = today[:4]
     his_operator.insert_news_data(fetched, year, source)
 
 
 def sync_weight_data():
-    pass
+    date_time_str = reverse_timestamper(get_now())[:-2] + '00'
+    weights_dict = watcher.get_code_weight()
+    his_operator.insert_weight_data(weights_dict, date_time_str)
 
-for f in [live_sina_news, live_yuncaijing_news]:
-    scheduler.add_job(func=f, trigger='cron', hour='7-22', minute='*/5')
-    scheduler.add_job(func=f, trigger='cron', hour='0-6,23', minute='*/30')
-    
+
+def decay_weight_data():
+    weights_dict = watcher.get_code_weight()
+    decayed_weights_dict = {
+        k: insula.weight_decay(v, 1) for k, v in weights_dict.items()
+    }
+    watcher.update_code_weight(decayed_weights_dict)
+
+
+scheduler.add_job(func=live_yuncaijing_news, trigger='cron', hour='7-22', minute='*/5')
+scheduler.add_job(func=live_yuncaijing_news, trigger='cron', hour='0-6,23', minute='*/30')
+
+scheduler.add_job(func=sync_weight_data, trigger='cron', hour='10,13,14', minute='*/30')
+scheduler.add_job(func=sync_weight_data, trigger='cron', hour='9,11', minute='30')
+scheduler.add_job(func=sync_weight_data, trigger='cron', hour='15', minute='0')
+
+scheduler.add_job(func=decay_weight_data, tirgger='cron', hour=23, minute=55)

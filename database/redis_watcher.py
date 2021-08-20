@@ -37,7 +37,8 @@ class redisWatcher():
 
     @pipeline_wrapper
     def reset_all_weight(self):
-        pass
+        self.conn.delete(self.code_weight)
+        self.conn.delete(self.field_weight)
 
     @pipeline_wrapper
     def get_code_weight(self):
