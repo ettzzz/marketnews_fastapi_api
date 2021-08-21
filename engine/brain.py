@@ -25,7 +25,12 @@ class SCD():
         weight_score: -1~1
         '''
         x = weight_score
-        return round(1-(1-x)*2, 4)
+        if x > 0:
+            return round(1-(1-x)*2, 2)
+        elif x < 0:
+            return round(-1+(1+x)*2, 2)
+        else:
+            return 0
 
     def weight_decay(self, weight_score, decay_count):
         decay = round(weight_score * (0.7**decay_count), 2)
@@ -45,4 +50,4 @@ class SCD():
         if is_mapping:
             return self.weight_mapping(sentimental_index)
         else:
-            return round(sentimental_index, 4)
+            return round(sentimental_index, 2)

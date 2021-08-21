@@ -85,11 +85,13 @@ class newsDatabaseOperator(sqliteBaseOperator):
     def insert_weight_data(self, weights_dict, date_time_str):
         date, _time = date_time_str.split(' ')
         fields = list(self.news_fields['feature'].keys())
+        non_zero_dict = {k: v for k, v in weights_dict.items() if v != 0}
+        
         fetched = [[
             date,
             _time,
-            ','.join(weights_dict.values()),
-            ','.join(weights_dict.keys())
+            str(list(non_zero_dict.values())),
+            str(list(non_zero_dict.keys()))
         ]]
         conn = self.on()
         conn.executemany(
@@ -110,14 +112,18 @@ class newsDatabaseOperator(sqliteBaseOperator):
         )
         return feature_weights
 
-    def _get_news(self, source, date):
+    def _get_news(self, source, date, start_timestamp=None, end_timestamp=None):
         year = date[:4]
         table_name = '{}_{}'.format(source, year)
-        start_timestamp = timestamper(date + ' ' + '00:00:00', '%Y-%m-%d %H:%M:%S')
-        end_timestamp = timestamper(date + ' ' + '23:59:59', '%Y-%m-%d %H:%M:%S')
+        if not start_timestamp:
+            start_timestamp = timestamper(date + ' ' + '00:00:00', '%Y-%m-%d %H:%M:%S')
+        if not end_timestamp:
+            end_timestamp = timestamper(date + ' ' + '23:59:59', '%Y-%m-%d %H:%M:%S')
 
+        target_cols = ['timestamp', 'content', 'code']
         news = self.fetch_by_command(
-            "SELECT * FROM '{}' WHERE timestamp BETWEEN {} AND {};".format(
+            "SELECT {} FROM '{}' WHERE code != '' AND timestamp BETWEEN {} AND {};".format(
+                ','.join(target_cols),
                 table_name,
                 start_timestamp,
                 end_timestamp
