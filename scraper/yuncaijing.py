@@ -37,7 +37,7 @@ class yuncaijingScrapper():
         code = self._get_code(news_dict)
 
         return {'fid': fid,
-                'source': 'yuncaijing',
+                'source': 'ycj',
                 'content': content,
                 'timestamp': timestamp,
                 'tag': tag,
@@ -102,14 +102,17 @@ if __name__ == "__main__":
     import random
     from database.news_operator import newsDatabaseOperator
     from utils.datetime_tools import date_range_generator, get_today_date
-    from config.static_vars import DAY_ZERO
+    # from config.static_vars import DAY_ZERO
     source = 'ycj'
     today = get_today_date()
     his_operator = newsDatabaseOperator()
+    
     news_fields = list(his_operator.news_fields['daily_news'].keys())
-
+    max_id = his_operator.get_latest_news_id(source)
+    max_date = his_operator.get_latest_news_date(source)
+    
     ys = yuncaijingScrapper()
-    dates = date_range_generator(DAY_ZERO, today, is_reverse=True)
+    dates = date_range_generator(max_date, today)
 
     for date in dates:
         print('yuncaijing', date)
@@ -126,6 +129,6 @@ if __name__ == "__main__":
             time.sleep(random.random() + random.randint(1, 2))
 
         df = pd.DataFrame(news[::-1])  # reverse sequence for yuncaijing
-        # df = df[(df['fid'] < min_id)]
+        df = df[(df['fid'] > max_id)]
         fetched = df[news_fields].to_numpy()
         his_operator.insert_news_data(fetched, year, source)

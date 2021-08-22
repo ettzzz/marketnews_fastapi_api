@@ -4,6 +4,8 @@ Created on Thu Aug 12 20:56:12 2021
 
 @author: ert
 """
+import time
+import random
 
 import pandas as pd
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -11,13 +13,18 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from engine.brain import SCD
 from database.news_operator import newsDatabaseOperator
 from database.redis_watcher import redisWatcher
-from scraper.sina import sinaScrapper
+# from scraper.sina import sinaScrapper
 from scraper.yuncaijing import yuncaijingScrapper
-from utils.datetime_tools import reverse_timestamper, get_today_date, get_now
+from utils.datetime_tools import (
+    reverse_timestamper,
+    get_today_date,
+    get_now,
+    date_range_generator
+    )
 
 scheduler = BackgroundScheduler()
 watcher = redisWatcher()
-ss = sinaScrapper()
+# ss = sinaScrapper()
 ys = yuncaijingScrapper()
 his_operator = newsDatabaseOperator()
 insula = SCD()
@@ -25,33 +32,33 @@ insula = SCD()
 news_fields = list(his_operator.news_fields['daily_news'].keys())
 
 
-def live_sina_news():
-    source = 'sina'
-    max_id = his_operator.get_latest_news_id(source=source)
-    params = ss.get_params(_type=0)
-    news = ss.get_news(params)
-    filtered_news = ss.get_filtered_news(news['list'])
+# def live_sina_news():
+#     source = 'sina'
+#     max_id = his_operator.get_latest_news_id(source=source)
+#     params = ss.get_params(_type=0)
+#     news = ss.get_news(params)
+#     filtered_news = ss.get_filtered_news(news['list'])
 
-    df = pd.DataFrame(filtered_news[::-1])  # reverse sequence for sina
-    df = df[(df['fid'] > max_id)]
-    if len(df) == 0:
-        return
+#     df = pd.DataFrame(filtered_news[::-1])  # reverse sequence for sina
+#     df = df[(df['fid'] > max_id)]
+#     if len(df) == 0:
+#         return
 
-    df['score'] = df['content'].apply(lambda row: insula.get_news_sentiment(row))
-    weights_dict = dict()
-    for idx, row in df.iterrows():
-        codes = row['code'].split(',')
-        for pseudo_code in codes:
-            if pseudo_code.startswith('s') and len(pseudo_code) == 8:
-                real_code = pseudo_code[:2] + '.' + pseudo_code[2:]
-                weights_dict[real_code] = row['score']
+#     df['score'] = df['content'].apply(lambda row: insula.get_news_sentiment(row))
+#     weights_dict = dict()
+#     for idx, row in df.iterrows():
+#         codes = row['code'].split(',')
+#         for pseudo_code in codes:
+#             if pseudo_code.startswith('s') and len(pseudo_code) == 8:
+#                 real_code = pseudo_code[:2] + '.' + pseudo_code[2:]
+#                 weights_dict[real_code] = row['score']
 
-    watcher.update_code_weight(weights_dict)  # {'code': 'score'}
+#     watcher.update_code_weight(weights_dict)  # {'code': 'score'}
 
-    df['year'] = df['timestamp'].apply(lambda row: reverse_timestamper(row)[:4])
-    for year, _count in df['year'].value_counts().items():
-        fetched = df[news_fields][(df['year'] == year)].to_numpy()
-        his_operator.insert_news_data(fetched, year, source)
+#     df['year'] = df['timestamp'].apply(lambda row: reverse_timestamper(row)[:4])
+#     for year, _count in df['year'].value_counts().items():
+#         fetched = df[news_fields][(df['year'] == year)].to_numpy()
+#         his_operator.insert_news_data(fetched, year, source)
 
 
 def live_yuncaijing_news():
@@ -85,6 +92,36 @@ def live_yuncaijing_news():
     his_operator.insert_news_data(fetched, year, source)
 
 
+def update_yuncaijing_news():
+    source = 'ycj'
+    max_id = his_operator.get_latest_news_id(source=source)
+    max_date = his_operator.get_latest_news_date(source=source)
+    today = get_today_date()
+    dates = date_range_generator(max_date, today)
+    
+    for date in dates:
+        print('updating yuncaijing', date)
+        year = date[:4]
+        page = 1
+        news = []
+        while True:
+            ycj_params = ys.get_params(page, date)
+            ycj_news = ys.get_news(ycj_params)
+            if not ycj_news:
+                break
+            news += ycj_news
+            page += 1
+            time.sleep(random.random() + random.randint(1, 2))
+
+        news = list(set(news)) # just in case of redundancy when dealing with today's news
+        df = pd.DataFrame(news[::-1])  # reverse sequence for yuncaijing
+        df = df[(df['fid'] > max_id)]
+        fetched = df[news_fields].to_numpy()
+        his_operator.insert_news_data(fetched, year, source)
+        
+# TODO: what about news_weight update?
+
+
 def sync_weight_data():
     date_time_str = reverse_timestamper(get_now())[:-2] + '00'
     weights_dict = watcher.get_code_weight()
@@ -99,6 +136,7 @@ def decay_weight_data():
     watcher.update_code_weight(decayed_weights_dict)
 
 
+scheduler.add_job(func=update_yuncaijing_news, trigger='date') # whenever run code
 scheduler.add_job(func=live_yuncaijing_news, trigger='cron', hour='7-22', minute='*/5')
 scheduler.add_job(func=live_yuncaijing_news, trigger='cron', hour='0-6,23', minute='*/30')
 
