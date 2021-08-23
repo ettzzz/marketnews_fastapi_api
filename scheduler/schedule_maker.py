@@ -96,13 +96,18 @@ def live_yuncaijing_news():
     his_operator.insert_news_data(fetched, year, source)
 
 
-def update_yuncaijing_news():
+def update_yuncaijing_news(is_history=True):
     source = 'ycj'
     max_id = his_operator.get_latest_news_id(source=source)
     max_date = his_operator.get_latest_news_date(source=source)
     today = get_today_date()
-    dates = date_range_generator(max_date, today)
-
+    if is_history:
+        latest_date = get_delta_date(today, -1)  # yesterday
+    else:
+        latest_date = today
+    dates = date_range_generator(max_date, latest_date)
+    ''''''
+    weights_dict = his_operator.get_latest_weight_dict()
     for date in dates:
         print('updating yuncaijing', date)
         year = date[:4]
@@ -120,8 +125,41 @@ def update_yuncaijing_news():
         news = list(set(news))  # just in case of redundancy when dealing with today's news
         df = pd.DataFrame(news[::-1])  # reverse sequence for yuncaijing
         df = df[(df['fid'] > max_id)]
+        if len(df) == 0:
+            continue
+
         fetched = df[news_fields].to_numpy()
         his_operator.insert_news_data(fetched, year, source)
+
+        df['score'] = df['content'].apply(lambda row: insula.get_news_sentiment(row))
+
+        for i in range(len(DAILY_TICKS) - 1):
+            start_time = DAILY_TICKS[i]
+            end_time = DAILY_TICKS[i+1]
+            start = timestamper(date + ' ' + start_time, '%Y-%m-%d %H:%M:%S')
+            end = timestamper(date + ' ' + end_time, '%Y-%m-%d %H:%M:%S')
+            news = df[(df['timestamp'] >= start) & (df['timestamp'] < end)]
+            for idx, row in news.iterrows():
+                codes = row['code'].split(',')
+                for pseudo_code in codes:
+                    if pseudo_code.startswith('6'):
+                        real_code = 'sh.' + pseudo_code
+                    else:
+                        real_code = 'sz.' + pseudo_code
+                    if real_code in weights_dict:
+                        weights_dict[real_code] = row['score']
+
+            if end_time[-1] == '0':
+                his_operator.insert_weight_data(
+                    weights_dict,
+                    date + ' ' + end_time
+                )
+
+        weights_dict = {
+            k: insula.weight_decay(v, 1) for k, v in weights_dict.items()
+        }
+
+    # watcher.update_code_weight(weights_dict)
 
 
 def update_news_weight():
@@ -164,12 +202,24 @@ def decay_weight_data():
     watcher.update_code_weight(decayed_weights_dict)
 
 
-scheduler.add_job(func=update_yuncaijing_news, trigger='date')  # whenever run code
-scheduler.add_job(func=live_yuncaijing_news, trigger='cron', hour='7-22', minute='*/5')
-scheduler.add_job(func=live_yuncaijing_news, trigger='cron', hour='0-6,23', minute='*/30')
+'''
+0:01
+scrape news for yesterday and before + calculate news_weight + decay if necessary
+4hours max
+
+8:00
+scrape news for today's dawn + calculate news_weight
+
+9:00-15:00 scrape news every 5 minutes + calculate news_weight
+'''
+
+
+# scheduler.add_job(func=update_yuncaijing_news, trigger='date')  # whenever run code
+scheduler.add_job(func=live_yuncaijing_news, trigger='cron', hour='9-15', minute='*/5')
+# scheduler.add_job(func=live_yuncaijing_news, trigger='cron', hour='0-6,23', minute='*/30')
 
 scheduler.add_job(func=sync_weight_data, trigger='cron', hour='10,13,14', minute='*/30')
 scheduler.add_job(func=sync_weight_data, trigger='cron', hour='9,11', minute='30')
 scheduler.add_job(func=sync_weight_data, trigger='cron', hour='15', minute='0')
 
-scheduler.add_job(func=decay_weight_data, tirgger='cron', hour=23, minute=55)
+# scheduler.add_job(func=decay_weight_data, tirgger='cron', hour=23, minute=55)
