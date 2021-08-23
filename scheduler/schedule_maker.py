@@ -126,12 +126,12 @@ def update_yuncaijing_news():
 
 def update_news_weight():
     source = 'ycj'  # !! this is not optimized way to get max_date
-    max_date = his_operator.get_latest_news_date(source=source)
-    yesterday = get_delta_date(get_today_date(), -1)
-    date_ranger = date_range_generator(max_date, yesterday)
+    # max_date = his_operator.get_latest_news_date(source=source)
 
     sim_env = simEnvironment()
     # TODO: sim_env.read_weight = his_operator.get_latest_weight?
+    yesterday = get_delta_date(get_today_date(), -1)
+    date_ranger = date_range_generator(max_date, yesterday)
 
     for date in date_ranger:
         print('generating', date)

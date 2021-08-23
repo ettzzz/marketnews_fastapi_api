@@ -3,14 +3,15 @@
 from fastapi import FastAPI
 
 from config.static_vars import API_PREFIX
+from scheduler.schedule_maker import watcher, his_operator
 
 app = FastAPI()
 
 
 @app.get("/{}/live_weight".format(API_PREFIX))
 def call_live_weight():
-    # watcher.get_code_weight
-    return {"Hello": "World"}
+    results = watcher.get_code_weight()
+    return results
 
 
 @app.get("/{}/historical_weight".format(API_PREFIX))

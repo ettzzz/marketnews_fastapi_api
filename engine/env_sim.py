@@ -76,6 +76,7 @@ if __name__ == "__main__":
     from config.static_vars import DAILY_TICKS
     source = 'ycj'
     sim_env = simEnvironment()
+
     ##### warmup #####
     warmup_days = 10
     start_date = get_delta_date(DAY_ZERO, warmup_days + 1)
@@ -89,8 +90,8 @@ if __name__ == "__main__":
         historical_news = his_operator._get_news(source, date)
         sim_env.update_weight(historical_news)
     ##### warmup done #####
-    date_ranger = date_range_generator(sim_env.start_date, '2020-12-31')  # or max date in ycj
 
+    date_ranger = date_range_generator(start_date, '2020-12-31')  # or max date in ycj
     for date in date_ranger:
         print('generating', date)
         for i in range(len(DAILY_TICKS) - 1):
