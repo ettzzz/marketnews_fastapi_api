@@ -32,6 +32,7 @@ class yuncaijingScrapper():
         fid = int(news_dict['id'])
         content = news_dict['title'].strip() + ',' + news_dict['description'].strip()
         # timestamp = reverse_timestamper(news_dict['inputtime']) # 10digit to DATE_TIME_FORMAT
+        # timestamp = self.timestamp_format(news_dict['inputtime']) # thats a fucking mistake
         timestamp = news_dict['inputtime']
         tag = news_dict['thmtags'].replace(' ', ',')
         code = self._get_code(news_dict)

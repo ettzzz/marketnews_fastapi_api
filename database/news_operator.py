@@ -36,7 +36,8 @@ class newsDatabaseOperator(sqliteBaseOperator):
                 'fid': ['INTEGER'],
                 'source': ['TEXT'],
                 'content': ['TEXT'],
-                'timestamp': ['TEXT'],
+                # 'timestamp': ['INTEGER'], # again a fucking mistake
+                'timestamp':['TEXT'],
                 'tag': ['TEXT'],
                 'code': ['TEXT'],
                 'industry': ['TEXT'],
@@ -163,7 +164,15 @@ class newsDatabaseOperator(sqliteBaseOperator):
         return date
 
     def get_latest_weight_dict(self):
-        pass
+        latest_weight_query = self.fetch_by_command(
+            "SELECT * FROM '{}' WHERE uid=(SELECT MAX(uid) FROM '{}');".format(
+                self.init_table_names['feature'],
+                self.init_table_names['feature'],
+            )
+        )
+        uid, date, _time, v, k = latest_weight_query[0]
+        latest_weight_dict = dict(zip(eval(k), eval(v)))
+        return latest_weight_dict
 
     def get_zero_news_id(self, source='sina'):
         '''
