@@ -14,13 +14,17 @@ from engine.brain import SCD
 from database.news_operator import newsDatabaseOperator
 from database.redis_watcher import redisWatcher
 # from scraper.sina import sinaScrapper
+from engine.env_sim import simEnvironment
 from scraper.yuncaijing import yuncaijingScrapper
 from utils.datetime_tools import (
     reverse_timestamper,
     get_today_date,
     get_now,
-    date_range_generator
-    )
+    date_range_generator,
+    timestamper,
+    get_delta_date
+)
+from config.static_vars import DAILY_TICKS
 
 scheduler = BackgroundScheduler()
 watcher = redisWatcher()
@@ -98,7 +102,7 @@ def update_yuncaijing_news():
     max_date = his_operator.get_latest_news_date(source=source)
     today = get_today_date()
     dates = date_range_generator(max_date, today)
-    
+
     for date in dates:
         print('updating yuncaijing', date)
         year = date[:4]
@@ -113,13 +117,37 @@ def update_yuncaijing_news():
             page += 1
             time.sleep(random.random() + random.randint(1, 2))
 
-        news = list(set(news)) # just in case of redundancy when dealing with today's news
+        news = list(set(news))  # just in case of redundancy when dealing with today's news
         df = pd.DataFrame(news[::-1])  # reverse sequence for yuncaijing
         df = df[(df['fid'] > max_id)]
         fetched = df[news_fields].to_numpy()
         his_operator.insert_news_data(fetched, year, source)
-        
-# TODO: what about news_weight update?
+
+
+def update_news_weight():
+    source = 'ycj'  # !! this is not optimized way to get max_date
+    max_date = his_operator.get_latest_news_date(source=source)
+    yesterday = get_delta_date(get_today_date(), -1)
+    date_ranger = date_range_generator(max_date, yesterday)
+
+    sim_env = simEnvironment()
+    # TODO: sim_env.read_weight = his_operator.get_latest_weight?
+
+    for date in date_ranger:
+        print('generating', date)
+        for i in range(len(DAILY_TICKS) - 1):
+            start_time = DAILY_TICKS[i]
+            end_time = DAILY_TICKS[i+1]
+            start = timestamper(date + ' ' + start_time, '%Y-%m-%d %H:%M:%S')
+            end = timestamper(date + ' ' + end_time, '%Y-%m-%d %H:%M:%S')
+            news = his_operator._get_news(source, date, start, end)
+            sim_env.update_weight(news)
+            if end_time[-1] == '0':
+                his_operator.insert_weight_data(
+                    sim_env.weights_dict,
+                    date + ' ' + end_time
+                )
+        sim_env.decay_weight()
 
 
 def sync_weight_data():
@@ -136,7 +164,7 @@ def decay_weight_data():
     watcher.update_code_weight(decayed_weights_dict)
 
 
-scheduler.add_job(func=update_yuncaijing_news, trigger='date') # whenever run code
+scheduler.add_job(func=update_yuncaijing_news, trigger='date')  # whenever run code
 scheduler.add_job(func=live_yuncaijing_news, trigger='cron', hour='7-22', minute='*/5')
 scheduler.add_job(func=live_yuncaijing_news, trigger='cron', hour='0-6,23', minute='*/30')
 

@@ -86,7 +86,7 @@ class newsDatabaseOperator(sqliteBaseOperator):
         date, _time = date_time_str.split(' ')
         fields = list(self.news_fields['feature'].keys())
         non_zero_dict = {k: v for k, v in weights_dict.items() if v != 0}
-        
+
         fetched = [[
             date,
             _time,
@@ -137,6 +137,8 @@ class newsDatabaseOperator(sqliteBaseOperator):
         if not self.table_info(table_name):
             table_name = '{}_{}'.format(source, str(int(today[:4]) - 1))
 
+        # TODO: fetch all table whose name contains source
+
         latest_news_id = self.fetch_by_command(
             "SELECT MAX(fid) FROM '{}' WHERE source = '{}';".format(
                 table_name,
@@ -144,13 +146,13 @@ class newsDatabaseOperator(sqliteBaseOperator):
             )
         )
         return latest_news_id[0][0]  # it should be an int
-    
+
     def get_latest_news_date(self, source='ycj'):
         today = get_today_date()
         table_name = '{}_{}'.format(source, today[:4])  # source + year
         if not self.table_info(table_name):
             table_name = '{}_{}'.format(source, str(int(today[:4]) - 1))
-        
+
         latest_news_date = self.fetch_by_command(
             "SELECT MAX(timestamp) FROM '{}' WHERE source = '{}';".format(
                 table_name,
@@ -159,8 +161,10 @@ class newsDatabaseOperator(sqliteBaseOperator):
         )
         date, _time = reverse_timestamper(latest_news_date[0][0]).split(' ')
         return date
-        
-        
+
+    def get_latest_weight_dict(self):
+        pass
+
     def get_zero_news_id(self, source='sina'):
         '''
         will be deprecated soon
