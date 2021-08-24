@@ -9,7 +9,7 @@ Created on Wed Aug 11 13:39:11 2021
 import os
 
 from .base_operator import sqliteBaseOperator
-from config.static_vars import NEWS_HISTORY_PATH, NEWS_ID_ZERO
+from config.static_vars import NEWS_HISTORY_PATH
 from utils.datetime_tools import get_today_date, timestamper, reverse_timestamper
 
 
@@ -111,7 +111,7 @@ class newsDatabaseOperator(sqliteBaseOperator):
                 end_date
             )
         )
-        return list(self.init_table_names['feature'].keys()), feature_weights
+        return list(self.news_fields['feature'].keys()), feature_weights
 
     def _get_news(self, source, date, start_timestamp=None, end_timestamp=None):
         year = date[:4]

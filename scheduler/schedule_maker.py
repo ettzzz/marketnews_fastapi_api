@@ -72,6 +72,8 @@ def _split_code_score(df, weights_dict=None):
     for idx, row in df.iterrows():
         codes = row['code']
         for pseudo_code in codes:
+            if len(pseudo_code) < 6:
+                continue  # not sure why there is a single stuff
             if pseudo_code.startswith('6'):
                 real_code = 'sh.' + pseudo_code
             else:
