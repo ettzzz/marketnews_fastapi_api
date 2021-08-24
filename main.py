@@ -25,9 +25,5 @@ def call_live_weight():
 def call_historical_weight(item: historicalWeightPost):
     start_date = item.start_date
     end_date = item.end_date
-    fields, fetched = his_operator.get_feature_weights(start_date, end_date)
-    # TODO: should we fix get_feature_weights from def?
-    results = list()
-    for f in fetched:
-        results.append(dict(zip(fields, f)))
-    return {'results': results}
+    results_list = his_operator.get_feature_weights(start_date, end_date)
+    return {'results': results_list}

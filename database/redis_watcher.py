@@ -42,12 +42,14 @@ class redisWatcher():
 
     @pipeline_wrapper
     def get_code_weight(self):
-        results = self.conn.hgetall(self.code_weight)
+        redis_results = self.conn.hgetall(self.code_weight)
+        results = {k: float(v) for k, v in redis_results.items()}
         return results
 
     @pipeline_wrapper
     def get_field_weight(self):
-        results = self.conn.hgetall(self.field_weight)
+        redis_results = self.conn.hgetall(self.field_weight)
+        results = {k: float(v) for k, v in redis_results.items()}
         return results
 
     @pipeline_wrapper

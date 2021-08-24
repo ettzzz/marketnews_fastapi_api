@@ -104,14 +104,22 @@ class newsDatabaseOperator(sqliteBaseOperator):
         self.off(conn)
 
     def get_feature_weights(self, start_date, end_date):
-        feature_weights = self.fetch_by_command(
-            "SELECT * FROM '{}' WHERE date BETWEEN '{}' AND '{}';".format(
+        fields = list(self.news_fields['feature'].keys())
+        fetched = self.fetch_by_command(
+            "SELECT {} FROM '{}' WHERE date BETWEEN '{}' AND '{}';".format(
+                ','.join(fields),
                 self.init_table_names['feature'],
                 start_date,
                 end_date
             )
         )
-        return list(self.news_fields['feature'].keys()), feature_weights
+
+        results = list()
+        for f in fetched:
+            temp = dict(zip(fields, f))
+            temp['weights_dict'] = dict(zip(eval(temp['sequence']), eval(temp['weights'])))
+            results.append(temp)
+        return results
 
     def _get_news(self, source, date, start_timestamp=None, end_timestamp=None):
         year = date[:4]
