@@ -36,6 +36,7 @@ insula = SCD()
 
 news_fields = list(his_operator.news_fields['daily_news'].keys())
 source = 'ycj'
+
 # def live_sina_news():
 #     source = 'sina'
 #     max_id = his_operator.get_latest_news_id(source=source)
@@ -104,6 +105,7 @@ def live_news():
     df = df.replace('', np.nan)
     df = df.dropna(subset=['code'])
     df['score'] = df['content'].apply(lambda row: insula.get_news_sentiment(row))
+    
     weights_dict = watcher.get_code_weight()  # TODO: need to confirm whether we can use an empty dict
     weights_dict = _split_code_score(df, weights_dict)
     watcher.update_code_weight(weights_dict)
@@ -200,3 +202,5 @@ scheduler.add_job(func=live_news, trigger='cron', hour='9-15', minute='*/5')
 scheduler.add_job(func=sync_weight, trigger='cron', hour='10,13,14', minute='*/30')
 scheduler.add_job(func=sync_weight, trigger='cron', hour='9,11', minute='30')
 scheduler.add_job(func=sync_weight, trigger='cron', hour='15', minute='0')
+
+scheduler.start()
