@@ -8,6 +8,7 @@ import time
 import random
 
 import pandas as pd
+import numpy as np
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from engine.brain import SCD
@@ -96,24 +97,21 @@ def live_news():
     df = df[(df['fid'] > max_id)]
     if len(df) == 0:
         return
+    # update news raw data first, redis later
+    fetched = df[news_fields].to_numpy()
+    his_operator.insert_news_data(fetched, year, source)
 
+    df = df.replace('', np.nan)
+    df = df.dropna(subset=['code'])
     df['score'] = df['content'].apply(lambda row: insula.get_news_sentiment(row))
     weights_dict = watcher.get_code_weight()  # TODO: need to confirm whether we can use an empty dict
     weights_dict = _split_code_score(df, weights_dict)
     watcher.update_code_weight(weights_dict)
 
-    # update redis first, news raw data later
-    fetched = df[news_fields].to_numpy()
-    his_operator.insert_news_data(fetched, year, source)
-
-
+    
 def update_news(is_history=True):
     today = get_today_date()
-    if is_history:
-        latest_date = get_delta_date(today, -1)  # yesterday
-    else:
-        latest_date = today
-
+    latest_date = get_delta_date(today, -1) if is_history else today # yesterday
     max_id = his_operator.get_latest_news_id(source=source)
     max_date = his_operator.get_latest_news_date(source=source)
     dates = date_range_generator(max_date, latest_date)
@@ -133,22 +131,25 @@ def update_news(is_history=True):
             if not is_history and reverse_timestamper(ycj_news[-1]['timestamp'], date_format) < date:
                 break  # it it's for today and last news is yesterday
             if ycj_news[0]['fid'] <= max_id:
-                continue  # we already have this batch
+                # page += 1
+                # continue  
+                break # we already have this batch
             news += ycj_news
             page += 1
 
         df = pd.DataFrame(news[::-1])  # from morning till evening
         df = df[(df['fid'] > max_id)]  # make sure all news are new
-        # just in case of redundancy when dealing with today's news
         df = df.drop_duplicates(subset=['fid'], keep='first')
+        # just in case of redundancy when dealing with today's news
         if len(df) == 0:
             continue
-
-        df['score'] = df['content'].apply(lambda row: insula.get_news_sentiment(row))
-        # add raw news data first, actually sequence doesn't matter anyway.
         fetched = df[news_fields].to_numpy()
         his_operator.insert_news_data(fetched, year, source)
-
+        # add raw news data first
+        df = df.replace('', np.nan)
+        df = df.dropna(subset=['code'])
+        df['score'] = df['content'].apply(lambda row: insula.get_news_sentiment(row))
+        
         # update news_weight table
         for i in range(len(DAILY_TICKS) - 1):
             start_time = DAILY_TICKS[i]
@@ -158,16 +159,16 @@ def update_news(is_history=True):
             news = df[(df['timestamp'] >= start) & (df['timestamp'] < end)]
             if len(news) == 0:
                 continue  # just make sure each time interval is valid
+                
             weights_dict = _split_code_score(news, weights_dict)
-
             if end_time[-1] == '0':  # 23:59:59 is not included
                 his_operator.insert_weight_data(
                     weights_dict,
                     date + ' ' + end_time
                 )
-
-        # decay when every day's end
-        weights_dict = {k: insula.weight_decay(v, 1) for k, v in weights_dict.items()}
+            else: # when end_time is '23:59:59', decay when every day's end
+                weights_dict = {k: insula.weight_decay(v, 1) for k, v in weights_dict.items()}
+    
     # finally update weight to redis watcher
     watcher.update_code_weight(weights_dict)
 
@@ -190,7 +191,7 @@ scrape news for today's dawn + calculate news_weight
 '''
 
 scheduler.add_job(func=update_news, kwargs={'is_history': True},
-                  trigger='cron', hour=0, minute=3)  # for yesterday and before
+                  trigger='cron', hour=0, minute=1)  # for yesterday and before
 # for today's dawn TODO not sure yet
 scheduler.add_job(func=update_news, kwargs={'is_history': False}, trigger='cron', hour=8, minute=50)
 scheduler.add_job(func=live_news, trigger='cron', hour='9-15', minute='*/5')
