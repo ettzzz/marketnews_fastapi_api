@@ -1,0 +1,1 @@
+uvicorn draft:app --host 127.0.0.1 --port 7705 --reload >> uvicorn.log 2>&1 &

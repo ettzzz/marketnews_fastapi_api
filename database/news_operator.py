@@ -37,7 +37,7 @@ class newsDatabaseOperator(sqliteBaseOperator):
                 'source': ['TEXT'],
                 'content': ['TEXT'],
                 # 'timestamp': ['INTEGER'], # again a fucking mistake
-                'timestamp':['TEXT'],
+                'timestamp': ['TEXT'],
                 'tag': ['TEXT'],
                 'code': ['TEXT'],
                 'industry': ['TEXT'],
@@ -111,7 +111,7 @@ class newsDatabaseOperator(sqliteBaseOperator):
                 end_date
             )
         )
-        return feature_weights
+        return list(self.init_table_names['feature'].keys()), feature_weights
 
     def _get_news(self, source, date, start_timestamp=None, end_timestamp=None):
         year = date[:4]
@@ -173,9 +173,3 @@ class newsDatabaseOperator(sqliteBaseOperator):
         uid, date, _time, v, k = latest_weight_query[0]
         latest_weight_dict = dict(zip(eval(k), eval(v)))
         return latest_weight_dict
-
-    def get_zero_news_id(self, source='sina'):
-        '''
-        will be deprecated soon
-        '''
-        return NEWS_ID_ZERO[source]

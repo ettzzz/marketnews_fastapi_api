@@ -13,7 +13,6 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from engine.brain import SCD
 from database.news_operator import newsDatabaseOperator
 from database.redis_watcher import redisWatcher
-# from scraper.sina import sinaScrapper
 from scraper.yuncaijing import yuncaijingScrapper
 from utils.datetime_tools import (
     reverse_timestamper,
@@ -30,7 +29,6 @@ date_format = '%Y-%m-%d'
 
 scheduler = BackgroundScheduler()
 watcher = redisWatcher()
-# ss = sinaScrapper()
 ys = yuncaijingScrapper()
 his_operator = newsDatabaseOperator()
 insula = SCD()
@@ -65,11 +63,12 @@ source = 'ycj'
 #         fetched = df[news_fields][(df['year'] == year)].to_numpy()
 #         his_operator.insert_news_data(fetched, year, source)
 
-def _split_code_score(df, weights_dict = None):
+
+def _split_code_score(df, weights_dict=None):
     # just for ycj
     if not weights_dict:
         weights_dict = dict()
-        
+
     for idx, row in df.iterrows():
         codes = row['code']
         for pseudo_code in codes:
@@ -78,14 +77,14 @@ def _split_code_score(df, weights_dict = None):
             else:
                 real_code = 'sz.' + pseudo_code
             weights_dict[real_code] = row['score']
-        
+
     return weights_dict
 
 
 def live_news():
     today = get_today_date()
     year = today[:4]
-    
+
     max_id = his_operator.get_latest_news_id(source=source)
     params = ys.get_params(page=1, date=today)
     news = ys.get_news(params)
@@ -97,10 +96,10 @@ def live_news():
         return
 
     df['score'] = df['content'].apply(lambda row: insula.get_news_sentiment(row))
-    weights_dict = watcher.get_code_weight() # TODO: need to confirm whether we can use an empty dict
+    weights_dict = watcher.get_code_weight()  # TODO: need to confirm whether we can use an empty dict
     weights_dict = _split_code_score(df, weights_dict)
     watcher.update_code_weight(weights_dict)
-    
+
     # update redis first, news raw data later
     fetched = df[news_fields].to_numpy()
     his_operator.insert_news_data(fetched, year, source)
@@ -112,15 +111,15 @@ def update_news(is_history=True):
         latest_date = get_delta_date(today, -1)  # yesterday
     else:
         latest_date = today
-    
+
     max_id = his_operator.get_latest_news_id(source=source)
     max_date = his_operator.get_latest_news_date(source=source)
     dates = date_range_generator(max_date, latest_date)
-    
+
     weights_dict = his_operator.get_latest_weight_dict()
     for date in dates:
         print('updating', date)
-        year = date[:4] # could be another year, ha
+        year = date[:4]  # could be another year, ha
         page = 1
         news = []
         while True:
@@ -128,17 +127,18 @@ def update_news(is_history=True):
             ycj_news = ys.get_news(ycj_params)
             time.sleep(random.random() + random.randint(1, 2))
             if is_history and not ycj_news:
-                break # if it's history and ycj_news is an empty list
+                break  # if it's history and ycj_news is an empty list
             if not is_history and reverse_timestamper(ycj_news[-1]['timestamp'], date_format) < date:
-                break # it it's for today and last news is yesterday
+                break  # it it's for today and last news is yesterday
             if ycj_news[0]['fid'] <= max_id:
-                continue # we already have this batch
+                continue  # we already have this batch
             news += ycj_news
             page += 1
-            
-        df = pd.DataFrame(news[::-1]) # from morning till evening
-        df = df[(df['fid'] > max_id)] # make sure all news are new
-        df = df.drop_duplicates(subset=['fid'], keep='first') # just in case of redundancy when dealing with today's news
+
+        df = pd.DataFrame(news[::-1])  # from morning till evening
+        df = df[(df['fid'] > max_id)]  # make sure all news are new
+        # just in case of redundancy when dealing with today's news
+        df = df.drop_duplicates(subset=['fid'], keep='first')
         if len(df) == 0:
             continue
 
@@ -155,19 +155,20 @@ def update_news(is_history=True):
             end = str(timestamper(date + ' ' + end_time, ts_format))
             news = df[(df['timestamp'] >= start) & (df['timestamp'] < end)]
             if len(news) == 0:
-                continue # just make sure each time interval is valid
+                continue  # just make sure each time interval is valid
             weights_dict = _split_code_score(news, weights_dict)
-            
-            if end_time[-1] == '0': # 23:59:59 is not included
+
+            if end_time[-1] == '0':  # 23:59:59 is not included
                 his_operator.insert_weight_data(
                     weights_dict,
                     date + ' ' + end_time
                 )
-                
+
         # decay when every day's end
         weights_dict = {k: insula.weight_decay(v, 1) for k, v in weights_dict.items()}
     # finally update weight to redis watcher
     watcher.update_code_weight(weights_dict)
+
 
 def sync_weight():
     date_time_str = reverse_timestamper(get_now())[:-2] + '00'
@@ -186,12 +187,13 @@ scrape news for today's dawn + calculate news_weight
 9:00-15:00 scrape news every 5 minutes + calculate news_weight
 '''
 
-scheduler.add_job(func=update_news, kwargs={'is_history':True}, trigger='cron', hour=0, minute=3) # for yesterday and before
-scheduler.add_job(func=update_news, kwargs={'is_history':False}, trigger='cron', hour=8, minute=50)  # for today's dawn TODO not sure yet
+scheduler.add_job(func=update_news, kwargs={'is_history': True},
+                  trigger='cron', hour=0, minute=3)  # for yesterday and before
+# for today's dawn TODO not sure yet
+scheduler.add_job(func=update_news, kwargs={'is_history': False}, trigger='cron', hour=8, minute=50)
 scheduler.add_job(func=live_news, trigger='cron', hour='9-15', minute='*/5')
-## AHAHAHAH watch out for news later than 15:00
+# AHAHAHAH watch out for news later than 15:00
 
 scheduler.add_job(func=sync_weight, trigger='cron', hour='10,13,14', minute='*/30')
 scheduler.add_job(func=sync_weight, trigger='cron', hour='9,11', minute='30')
 scheduler.add_job(func=sync_weight, trigger='cron', hour='15', minute='0')
-

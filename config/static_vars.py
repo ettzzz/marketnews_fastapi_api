@@ -35,10 +35,6 @@ SENTI_REDIS_CONFIG = {
 }
 
 
-NEWS_ID_ZERO = {
-    'sina': 1099379  # first news id on DAY_ZERO
-}
-
 HAS_CUDA = torch.cuda.is_available()
 HUGGING_CONFIG = {
     'task': 'sentiment-analysis',
