@@ -25,6 +25,7 @@ API_PREFIX = 'api_v1'
 
 
 STOCK_HOST = 'http://{}:7702/api_v1'.format(ICU_IP)
+DQN_HOST = 'http://{}:7704/api_v1'.format(ICU_IP)
 SENTI_REDIS_CONFIG = {
     'host': ICU_IP,
     'port': 7779,

@@ -63,15 +63,15 @@ class simEnvironment():
 
 if __name__ == "__main__":
     from config.static_vars import DAILY_TICKS
-    
+    from utils.internet_tools import all_open_days
     source = 'ycj'
     all_codes = all_codes_receiver()
+    open_days = all_open_days()
     sim_env = simEnvironment(code_list=all_codes)
 
     max_date = his_operator.get_latest_news_date(source=source)
     date_ranger = date_range_generator(DAY_ZERO, max_date)
-    # TODO: how to get rid of weekends and holidays? dqn add an api for request_trading_days
-    # pick up days were not trading, if date in these days, don't insert_weight_data
+    
     for date in date_ranger:
         print('generating', date)
         for i in range(len(DAILY_TICKS) - 1):
@@ -83,7 +83,7 @@ if __name__ == "__main__":
             news = his_operator._get_news(source, date, start, end)
             sim_env.update_weight(news)
             
-            if end_time[-1] == '0':
+            if end_time[-1] == '0' and date in open_days:
                 his_operator.insert_weight_data(
                     sim_env.weights_dict,
                     date + ' ' + end_time

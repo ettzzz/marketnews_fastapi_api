@@ -8,7 +8,7 @@ Created on Fri Aug 20 17:09:10 2021
 
 import requests
 
-from config.static_vars import STOCK_HOST
+from config.static_vars import STOCK_HOST, DQN_HOST
 
 def all_codes_receiver(is_train=True):
     if is_train:
@@ -22,3 +22,12 @@ def all_codes_receiver(is_train=True):
     # r.json() # actually it's a list.
     code_list = [c[0] for c in r.json()]
     return code_list
+
+
+def all_open_days():
+    r = requests.get(
+        '{}/open_days'.format(DQN_HOST),
+        timeout=15
+    )
+    date_list = r.json()['dates']
+    return date_list
