@@ -105,15 +105,15 @@ def live_news():
     df = df.replace('', np.nan)
     df = df.dropna(subset=['code'])
     df['score'] = df['content'].apply(lambda row: insula.get_news_sentiment(row))
-    
+
     weights_dict = watcher.get_code_weight()  # TODO: need to confirm whether we can use an empty dict
     weights_dict = _split_code_score(df, weights_dict)
     watcher.update_code_weight(weights_dict)
 
-    
+
 def update_news(is_history=True):
     today = get_today_date()
-    latest_date = get_delta_date(today, -1) if is_history else today # yesterday
+    latest_date = get_delta_date(today, -1) if is_history else today  # yesterday
     max_id = his_operator.get_latest_news_id(source=source)
     max_date = his_operator.get_latest_news_date(source=source)
     dates = date_range_generator(max_date, latest_date)
@@ -134,8 +134,8 @@ def update_news(is_history=True):
                 break  # it it's for today and last news is yesterday
             if ycj_news[0]['fid'] <= max_id:
                 # page += 1
-                # continue  
-                break # we already have this batch
+                # continue
+                break  # we already have this batch
             news += ycj_news
             page += 1
 
@@ -151,7 +151,7 @@ def update_news(is_history=True):
         df = df.replace('', np.nan)
         df = df.dropna(subset=['code'])
         df['score'] = df['content'].apply(lambda row: insula.get_news_sentiment(row))
-        
+
         # update news_weight table
         for i in range(len(DAILY_TICKS) - 1):
             start_time = DAILY_TICKS[i]
@@ -159,18 +159,19 @@ def update_news(is_history=True):
             start = str(timestamper(date + ' ' + start_time, ts_format))
             end = str(timestamper(date + ' ' + end_time, ts_format))
             news = df[(df['timestamp'] >= start) & (df['timestamp'] < end)]
+            # print(start_time, end_time, len(news))
             if len(news) == 0:
                 continue  # just make sure each time interval is valid
-                
+
             weights_dict = _split_code_score(news, weights_dict)
             if end_time[-1] == '0':  # 23:59:59 is not included
                 his_operator.insert_weight_data(
                     weights_dict,
                     date + ' ' + end_time
                 )
-            else: # when end_time is '23:59:59', decay when every day's end
+            else:  # when end_time is '23:59:59', decay when every day's end
                 weights_dict = {k: insula.weight_decay(v, 1) for k, v in weights_dict.items()}
-    
+
     # finally update weight to redis watcher
     watcher.update_code_weight(weights_dict)
 
@@ -192,15 +193,20 @@ scrape news for today's dawn + calculate news_weight
 9:00-15:00 scrape news every 5 minutes + calculate news_weight
 '''
 
-scheduler.add_job(func=update_news, kwargs={'is_history': True},
-                  trigger='cron', hour=0, minute=1)  # for yesterday and before
+scheduler.add_job(func=update_news, kwargs={'is_history': True}, trigger='cron',
+                  hour=0, minute=1, day_of_week='mon-fri')  # for yesterday and before
 # for today's dawn TODO not sure yet
-scheduler.add_job(func=update_news, kwargs={'is_history': False}, trigger='cron', hour=8, minute=50)
-scheduler.add_job(func=live_news, trigger='cron', hour='9-15', minute='*/5')
+scheduler.add_job(func=update_news, kwargs={'is_history': False}, trigger='cron',
+                  hour=8, minute=50, day_of_week='mon-fri')
+scheduler.add_job(func=live_news, trigger='cron',
+                  hour='9-15', minute='*/5', day_of_week='mon-fri')
 # AHAHAHAH watch out for news later than 15:00
 
-scheduler.add_job(func=sync_weight, trigger='cron', hour='10,13,14', minute='*/30')
-scheduler.add_job(func=sync_weight, trigger='cron', hour='9,11', minute='30')
-scheduler.add_job(func=sync_weight, trigger='cron', hour='15', minute='0')
+scheduler.add_job(func=sync_weight, trigger='cron',
+                  hour='10,13,14', minute='*/30', day_of_week='mon-fri')
+scheduler.add_job(func=sync_weight, trigger='cron',
+                  hour='9,11', minute='30', day_of_week='mon-fri')
+scheduler.add_job(func=sync_weight, trigger='cron',
+                  hour='15', minute='0', day_of_week='mon-fri')
 
 scheduler.start()
