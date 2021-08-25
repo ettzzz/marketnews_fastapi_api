@@ -194,7 +194,7 @@ scrape news for today's dawn + calculate news_weight
 '''
 
 scheduler.add_job(func=update_news, kwargs={'is_history': True}, trigger='cron',
-                  hour=0, minute=1, day_of_week='mon-fri')  # for yesterday and before
+                  hour=2, minute=1, day_of_week='mon-fri')  # for yesterday and before
 # for today's dawn TODO not sure yet
 scheduler.add_job(func=update_news, kwargs={'is_history': False}, trigger='cron',
                   hour=8, minute=50, day_of_week='mon-fri')
