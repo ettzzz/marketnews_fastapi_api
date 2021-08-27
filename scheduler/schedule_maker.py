@@ -144,6 +144,7 @@ def update_news(is_history=True):
                 break  # we already have this batch
             news += ycj_news
             page += 1
+        print('updating done.')
 
         if len(news) == 0:
             continue
@@ -206,7 +207,7 @@ scheduler.add_job(func=update_news, kwargs={'is_history': True}, trigger='cron',
 scheduler.add_job(func=update_news, kwargs={'is_history': False}, trigger='cron',
                   hour=8, minute=50, day_of_week='mon-fri')
 scheduler.add_job(func=live_news, trigger='cron',
-                  hour='9-15', minute='*/5', day_of_week='mon-fri')
+                  hour='9-14', minute='*/5', day_of_week='mon-fri')
 # AHAHAHAH watch out for news later than 15:00
 
 scheduler.add_job(func=sync_weight, trigger='cron',
