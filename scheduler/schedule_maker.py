@@ -208,6 +208,8 @@ scheduler.add_job(func=update_news, kwargs={'is_history': False}, trigger='cron'
                   hour=8, minute=50, day_of_week='mon-fri')
 scheduler.add_job(func=live_news, trigger='cron',
                   hour='9-14', minute='*/5', day_of_week='mon-fri')
+scheduler.add_job(func=live_news, trigger='cron',
+                  hour=15, minute=0, day_of_week='mon-fri')
 # AHAHAHAH watch out for news later than 15:00
 
 scheduler.add_job(func=sync_weight, trigger='cron',
