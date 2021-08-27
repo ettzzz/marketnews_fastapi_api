@@ -11,7 +11,6 @@ import pandas as pd
 import numpy as np
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from engine.brain import SCD
 from database.news_operator import newsDatabaseOperator
 from database.redis_watcher import redisWatcher
 from scraper.yuncaijing import yuncaijingScrapper
@@ -24,18 +23,19 @@ from utils.datetime_tools import (
     get_delta_date
 )
 from config.static_vars import DAILY_TICKS
-
-ts_format = '%Y-%m-%d %H:%M:%S'
-date_format = '%Y-%m-%d'
+from engine.brain import SCD
 
 scheduler = BackgroundScheduler()
 watcher = redisWatcher()
 ys = yuncaijingScrapper()
 his_operator = newsDatabaseOperator()
+
 insula = SCD()
 
 news_fields = list(his_operator.news_fields['daily_news'].keys())
 source = 'ycj'
+ts_format = '%Y-%m-%d %H:%M:%S'
+date_format = '%Y-%m-%d'
 
 # def live_sina_news():
 #     source = 'sina'
@@ -94,6 +94,9 @@ def live_news():
     news = ys.get_news(params)
     filtered_news = ys.get_filtered_news(news)
 
+    if len(filtered_news) == 0:
+        return
+
     df = pd.DataFrame(filtered_news[::-1])
     df = df[(df['fid'] > max_id)]
     if len(df) == 0:
@@ -113,57 +116,62 @@ def live_news():
 
 def update_news(is_history=True):
     today = get_today_date()
-    latest_date = get_delta_date(today, -1) if is_history else today  # yesterday
     max_id = his_operator.get_latest_news_id(source=source)
-    max_date = his_operator.get_latest_news_date(source=source)
-    dates = date_range_generator(max_date, latest_date)
-
     weights_dict = his_operator.get_latest_weight_dict()
+
+    if is_history:
+        max_date = his_operator.get_latest_news_date(source=source)
+        latest_date = get_delta_date(today, -1)
+    else:
+        max_date = today
+        latest_date = today
+
+    dates = date_range_generator(max_date, latest_date)
     for date in dates:
-        print('updating', date)
         year = date[:4]  # could be another year, ha
         page = 1
         news = []
         while True:
             ycj_params = ys.get_params(page, date)
             ycj_news = ys.get_news(ycj_params)
+            print('updating', date, page, 'is_history', is_history)
             time.sleep(random.random() + random.randint(1, 2))
             if is_history and not ycj_news:
                 break  # if it's history and ycj_news is an empty list
             if not is_history and reverse_timestamper(ycj_news[-1]['timestamp'], date_format) < date:
                 break  # it it's for today and last news is yesterday
             if ycj_news[0]['fid'] <= max_id:
-                # page += 1
-                # continue
                 break  # we already have this batch
             news += ycj_news
             page += 1
 
+        if len(news) == 0:
+            continue
+
         df = pd.DataFrame(news[::-1])  # from morning till evening
         df = df[(df['fid'] > max_id)]  # make sure all news are new
-        df = df.drop_duplicates(subset=['fid'], keep='first')
-        # just in case of redundancy when dealing with today's news
+        df = df.drop_duplicates(subset=['fid'], keep='first')  # drop duplicates of today's news
         if len(df) == 0:
             continue
+
         fetched = df[news_fields].to_numpy()
-        his_operator.insert_news_data(fetched, year, source)
-        # add raw news data first
+        his_operator.insert_news_data(fetched, year, source)  # add raw news data first
+
         df = df.replace('', np.nan)
         df = df.dropna(subset=['code'])
         df['score'] = df['content'].apply(lambda row: insula.get_news_sentiment(row))
 
-        # update news_weight table
-        for i in range(len(DAILY_TICKS) - 1):
+        for i in range(len(DAILY_TICKS) - 1):  # then update news_weight table
             start_time = DAILY_TICKS[i]
             end_time = DAILY_TICKS[i+1]
             start = str(timestamper(date + ' ' + start_time, ts_format))
             end = str(timestamper(date + ' ' + end_time, ts_format))
-            news = df[(df['timestamp'] >= start) & (df['timestamp'] < end)]
-            # print(start_time, end_time, len(news))
-            if len(news) == 0:
+            period_news = df[(df['timestamp'] >= start) & (df['timestamp'] < end)]
+            print(start_time, end_time, len(period_news))
+            if len(period_news) == 0:
                 continue  # just make sure each time interval is valid
 
-            weights_dict = _split_code_score(news, weights_dict)
+            weights_dict = _split_code_score(period_news, weights_dict)
             if end_time[-1] == '0':  # 23:59:59 is not included
                 his_operator.insert_weight_data(
                     weights_dict,
@@ -172,8 +180,7 @@ def update_news(is_history=True):
             else:  # when end_time is '23:59:59', decay when every day's end
                 weights_dict = {k: insula.weight_decay(v, 1) for k, v in weights_dict.items()}
 
-    # finally update weight to redis watcher
-    watcher.update_code_weight(weights_dict)
+    watcher.update_code_weight(weights_dict)  # finally update weight to redis watcher
 
 
 def sync_weight():

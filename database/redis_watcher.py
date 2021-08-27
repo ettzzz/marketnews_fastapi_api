@@ -31,6 +31,9 @@ class redisWatcher():
         self.code_weight = 'code_sentiment'  # single code
         self.field_weight = 'field_sentiment'  # field
 
+    def _non_zero_mapping(self, raw_dict):
+        return {k: float(v) for k, v in raw_dict.items() if float(v) != 0}
+
     @pipeline_wrapper
     def flush_with_caution(self):
         self.conn.flushdb()
@@ -43,19 +46,20 @@ class redisWatcher():
     @pipeline_wrapper
     def get_code_weight(self):
         redis_results = self.conn.hgetall(self.code_weight)
-        results = {k: float(v) for k, v in redis_results.items()}
+        results = self._non_zero_mapping(redis_results)
+        # results = {k: float(v) for k, v in redis_results.items()}
         return results
 
-    @pipeline_wrapper
-    def get_field_weight(self):
-        redis_results = self.conn.hgetall(self.field_weight)
-        results = {k: float(v) for k, v in redis_results.items()}
-        return results
+    # @pipeline_wrapper
+    # def get_field_weight(self):
+    #     results = self.conn.hgetall(self.field_weight)
+    #     return results
 
     @pipeline_wrapper
     def update_code_weight(self, weights_dict):
-        self.conn.hmset(self.code_weight, mapping=weights_dict)
+        non_zeros = self._non_zero_mapping(weights_dict)
+        self.conn.hmset(self.code_weight, mapping=non_zeros)
 
-    @pipeline_wrapper
-    def update_field_weight(self, weights_dict):
-        self.conn.hmset(self.field_weight, mapping=weights_dict)
+    # @pipeline_wrapper
+    # def update_field_weight(self, weights_dict):
+    #     self.conn.hmset(self.field_weight, mapping=weights_dict)
