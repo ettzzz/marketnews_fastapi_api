@@ -37,7 +37,7 @@ SENTI_REDIS_CONFIG = {
 
 
 HAS_CUDA = torch.cuda.is_available()
-HUGGING_CONFIG = {
+ROBERTA_CONFIG = {
     'task': 'sentiment-analysis',
     'model': 'liam168/c2-roberta-base-finetuned-dianping-chinese',
     'device': 0 if HAS_CUDA else -1  # default -1 as cpu, other 01234 refer to gpu number

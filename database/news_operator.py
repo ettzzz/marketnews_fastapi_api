@@ -132,7 +132,7 @@ class newsDatabaseOperator(sqliteBaseOperator):
         target_cols = ['timestamp', 'content', 'code']
         news = self.fetch_by_command(
             # "SELECT {} FROM '{}' WHERE code != '' AND timestamp BETWEEN {} AND {};".format(
-            "SELECT {} FROM '{}' WHERE timestamp BETWEEN {} AND {};".format(
+            "SELECT {} FROM '{}' WHERE timestamp BETWEEN '{}' AND '{}';".format(
                 ','.join(target_cols),
                 table_name,
                 start_timestamp,

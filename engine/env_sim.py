@@ -18,7 +18,6 @@ Created on Fri Aug 20 16:40:16 2021
 
 '''
 
-
 from engine.brain import SCD
 from config.static_vars import DAY_ZERO
 from database.news_operator import newsDatabaseOperator
