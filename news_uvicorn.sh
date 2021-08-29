@@ -6,7 +6,7 @@ kill_now(){
 }
 
 start_new(){
-    uvicorn main:app --host 127.0.0.1 --port 7705 --reload >> ./uvicorn.log 2>&1 &
+    uvicorn main:app --host 127.0.0.1 --port 7705 >> ./uvicorn.log 2>&1 &
 }
 
 option=$1
