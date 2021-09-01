@@ -41,13 +41,12 @@ class redisWatcher():
     @pipeline_wrapper
     def reset_all_weight(self):
         self.conn.delete(self.code_weight)
-        self.conn.delete(self.field_weight)
+        # self.conn.delete(self.field_weight)
 
     @pipeline_wrapper
     def get_code_weight(self):
         redis_results = self.conn.hgetall(self.code_weight)
         results = self._non_zero_mapping(redis_results)
-        # results = {k: float(v) for k, v in redis_results.items()}
         return results
 
     # @pipeline_wrapper
@@ -58,7 +57,8 @@ class redisWatcher():
     @pipeline_wrapper
     def update_code_weight(self, weights_dict):
         non_zeros = self._non_zero_mapping(weights_dict)
-        self.conn.hmset(self.code_weight, mapping=non_zeros)
+        self.reset_all_weight()  # it seems redis cannot overwrite an existing key
+        self.conn.hset(self.code_weight, mapping=non_zeros)
 
     # @pipeline_wrapper
     # def update_field_weight(self, weights_dict):

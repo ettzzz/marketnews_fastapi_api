@@ -114,7 +114,7 @@ def live_news():
     watcher.update_code_weight(weights_dict)
 
 
-def update_news(is_history=True):
+def update_news(is_history):
     today = get_today_date()
     max_id = his_operator.get_latest_news_id(source=source)
     weights_dict = his_operator.get_latest_weight_dict()
@@ -125,6 +125,7 @@ def update_news(is_history=True):
     else:
         max_date = today
         latest_date = today
+    print('temp debug', is_history, max_date, latest_date)
 
     dates = date_range_generator(max_date, latest_date)
     for date in dates:
