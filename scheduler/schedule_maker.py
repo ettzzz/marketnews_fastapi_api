@@ -22,6 +22,7 @@ from utils.datetime_tools import (
     timestamper,
     get_delta_date
 )
+from utils.internet_tools import call_bot_dispatch
 from config.static_vars import DAILY_TICKS
 from engine.brain import SCD
 
@@ -109,10 +110,14 @@ def live_news():
     df = df.dropna(subset=['code'])
     df['score'] = df['content'].apply(lambda row: insula.get_news_sentiment(row))
 
-    weights_dict = watcher.get_code_weight()  # TODO: need to confirm whether we can use an empty dict
-    weights_dict = _split_code_score(df, weights_dict)
-    watcher.update_code_weight(weights_dict)
+    old_weight = watcher.get_code_weight()  # TODO: need to confirm whether we can use an empty dict
+    new_weight = _split_code_score(df, old_weight)
+    watcher.update_code_weight(new_weight)
 
+    text = 'length of live news {}, is new and old the same: {}'.format(
+        len(df), old_weight == new_weight)
+    print(text)
+    call_bot_dispatch('probius', '/', text)
 
 def update_news(is_history):
     today = get_today_date()
@@ -144,7 +149,10 @@ def update_news(is_history):
                 break  # we already have this batch
             news += ycj_news
             page += 1
-        print('updating {} {} done.'.format(date, page))
+
+        reminder = '{} page {} is_history {} updating done.'.format(date, page, is_history)
+        print(reminder)
+        call_bot_dispatch('probius', '/', reminder)
 
         if len(news) == 0:
             continue
@@ -187,7 +195,9 @@ def update_news(is_history):
 def sync_weight():
     date_time_str = reverse_timestamper(get_now())[:-2] + '00'
     weights_dict = watcher.get_code_weight()
-    print('sync data at {} with len {}'.format(date_time_str, len(weights_dict)))
+    text = 'sync data at {} with len {}'.format(date_time_str, len(weights_dict))
+    print(text)
+    call_bot_dispatch('probius', '/', text)
     his_operator.insert_weight_data(weights_dict, date_time_str)
 
 

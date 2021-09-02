@@ -8,7 +8,7 @@ Created on Fri Aug 20 17:09:10 2021
 
 import requests
 
-from config.static_vars import STOCK_HOST, DQN_HOST
+from config.static_vars import STOCK_HOST, DQN_HOST, BOT_DISPATCH_ADDRESS
 
 def all_codes_receiver(is_train=True):
     if is_train:
@@ -31,3 +31,15 @@ def all_open_days():
     )
     date_list = r.json()['dates']
     return date_list
+
+
+def call_bot_dispatch(to, link, text):
+    r = requests.post(
+        BOT_DISPATCH_ADDRESS,
+        data={
+            'to': to,
+            'link': link,
+            'text': text
+        }
+    )
+    return r.json()
