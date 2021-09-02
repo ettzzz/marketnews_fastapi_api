@@ -125,7 +125,6 @@ def update_news(is_history):
     else:
         max_date = today
         latest_date = today
-    print('temp debug', is_history, max_date, latest_date)
 
     dates = date_range_generator(max_date, latest_date)
     for date in dates:
@@ -135,7 +134,7 @@ def update_news(is_history):
         while True:
             ycj_params = ys.get_params(page, date)
             ycj_news = ys.get_news(ycj_params)
-            print('updating', date, page, 'is_history', is_history)
+            # print('updating', date, page, 'is_history', is_history)
             time.sleep(random.random() + random.randint(1, 2))
             if is_history and not ycj_news:
                 break  # if it's history and ycj_news is an empty list
@@ -145,7 +144,7 @@ def update_news(is_history):
                 break  # we already have this batch
             news += ycj_news
             page += 1
-        print('updating done.')
+        print('updating {} {} done.'.format(date, page))
 
         if len(news) == 0:
             continue
@@ -169,7 +168,7 @@ def update_news(is_history):
             start = str(timestamper(date + ' ' + start_time, ts_format))
             end = str(timestamper(date + ' ' + end_time, ts_format))
             period_news = df[(df['timestamp'] >= start) & (df['timestamp'] < end)]
-            print(start_time, end_time, len(period_news))
+            # print(start_time, end_time, len(period_news))
             if len(period_news) == 0:
                 continue  # just make sure each time interval is valid
 
@@ -188,6 +187,7 @@ def update_news(is_history):
 def sync_weight():
     date_time_str = reverse_timestamper(get_now())[:-2] + '00'
     weights_dict = watcher.get_code_weight()
+    print('sync data at {} with len {}'.format(date_time_str, len(weights_dict)))
     his_operator.insert_weight_data(weights_dict, date_time_str)
 
 
