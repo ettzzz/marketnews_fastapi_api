@@ -1,7 +1,7 @@
 
 #！/bin/bash
 
-$pid_file="pids.uvicorn"
+pid_file="pids.uvicorn"
 
 kill_now(){
     # ps aux|grep fastapi|awk '{print $2}'|xargs kill -9
