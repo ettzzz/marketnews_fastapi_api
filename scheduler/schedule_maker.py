@@ -201,32 +201,20 @@ def sync_weight():
     call_bot_dispatch('probius', '/', text)
     his_operator.insert_weight_data(weights_dict, date_time_str)
 
-
-'''
-0:03
-scrape news for yesterday and before + calculate news_weight + decay if necessary
-4hours max ≈ 90 days of news
-
-8:50
-scrape news for today's dawn + calculate news_weight
-
-9:00-15:00 scrape news every 5 minutes + calculate news_weight
-'''
-
+# start update news as a new day
 scheduler.add_job(func=update_news, kwargs={'is_history': True}, trigger='cron',
-                  hour=2, minute=1, day_of_week='mon-fri')  # for yesterday and before
+                  day_of_week='mon-fri', hour=2, minute=1, jitter=60)  # for yesterday and before
 # for today's dawn
 scheduler.add_job(func=update_news, kwargs={'is_history': False}, trigger='cron',
-                  hour=8, minute=50, day_of_week='mon-fri')
-scheduler.add_job(func=live_news, trigger='cron',
-                  hour='9-14', minute='*/5', day_of_week='mon-fri')
-scheduler.add_job(func=live_news, trigger='cron',
-                  hour=15, minute=0, day_of_week='mon-fri')
+                  day_of_week='mon-fri', hour=8, minute=50, jitter=5)
+scheduler.add_job(func=live_news, trigger='cron', day_of_week='mon-fri',
+                  hour='9-14', minute='*/5', second=30) # why? because there could be some dqn operations
+scheduler.add_job(func=live_news, trigger='cron', day_of_week='mon-fri',
+                  hour=15, minute=0, second=10)
 # AHAHAHAH watch out for news later than 15:00
-
-scheduler.add_job(func=sync_weight, trigger='cron',
-                  hour='10,11,13,14', minute=30, day_of_week='mon-fri')
-scheduler.add_job(func=sync_weight, trigger='cron',
-                  hour='10,13,14,15', minute=0, day_of_week='mon-fri')
+scheduler.add_job(func=sync_weight, trigger='cron', day_of_week='mon-fri',
+                  hour='10,11,13,14', minute=30, second=30)
+scheduler.add_job(func=sync_weight, trigger='cron', day_of_week='mon-fri'
+                  hour='10,13,14,15', minute=0, second=30)
 
 scheduler.start()
