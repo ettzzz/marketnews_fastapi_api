@@ -6,6 +6,7 @@ Created on Thu Aug 12 20:56:12 2021
 """
 import time
 import random
+from copy import deepcopy
 
 import pandas as pd
 import numpy as np
@@ -67,23 +68,23 @@ date_format = '%Y-%m-%d'
 #         his_operator.insert_news_data(fetched, year, source)
 
 
-def _split_code_score(df, weights_dict=None):
+def _split_code_score(df, old_dict=None):
     # just for ycj
-    if not weights_dict:
-        weights_dict = dict()
+    new_dict = dict() if old_dict is None else deepcopy(old_dict)
 
     for idx, row in df.iterrows():
-        codes = row['code']
+        codes = row['code'].split(',')
         for pseudo_code in codes:
             if len(pseudo_code) < 6:
+                print('yeah')
                 continue  # not sure why there is a single stuff
             if pseudo_code.startswith('6'):
                 real_code = 'sh.' + pseudo_code
             else:
                 real_code = 'sz.' + pseudo_code
-            weights_dict[real_code] = row['score']
+            new_dict[real_code] = row['score']
 
-    return weights_dict
+    return new_dict
 
 
 def live_news():
@@ -93,31 +94,32 @@ def live_news():
     max_id = his_operator.get_latest_news_id(source=source)
     params = ys.get_params(page=1, date=today)
     news = ys.get_news(params)
-    filtered_news = ys.get_filtered_news(news)
-
-    if len(filtered_news) == 0:
+    # filtered_news = ys.get_filtered_news(news)
+    if len(news) == 0:
         return
 
-    df = pd.DataFrame(filtered_news[::-1])
+    df = pd.DataFrame(news[::-1])
     df = df[(df['fid'] > max_id)]
     if len(df) == 0:
         return
-    # update news raw data first, redis later
+    # update news raw data first, redis laterm so it shouldn't be filtered now
     fetched = df[news_fields].to_numpy()
     his_operator.insert_news_data(fetched, year, source)
 
-    df = df.replace('', np.nan)
+    df = df.replace('', np.nan)  # filtered_news has already removed code = ''
     df = df.dropna(subset=['code'])
     df['score'] = df['content'].apply(lambda row: insula.get_news_sentiment(row))
 
-    old_weight = watcher.get_code_weight()  # TODO: need to confirm whether we can use an empty dict
+    old_weight = watcher.get_code_weight()
     new_weight = _split_code_score(df, old_weight)
     watcher.update_code_weight(new_weight)
 
-    text = 'length of live news {}, is new and old the same: {}'.format(
-        len(df), old_weight == new_weight)
+    text = 'length of live news {}, len(old)={}, len(new)={}'.format(
+        len(df), len(old_weight), len(new_weight)
+    )
     print(text)
     call_bot_dispatch('probius', '/', text)
+
 
 def update_news(is_history):
     today = get_today_date()
