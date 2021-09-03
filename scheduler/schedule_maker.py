@@ -94,9 +94,6 @@ def live_news():
     max_id = his_operator.get_latest_news_id(source=source)
     params = ys.get_params(page=1, date=today)
     news = ys.get_news(params)
-    # filtered_news = ys.get_filtered_news(news)
-    if len(news) == 0:
-        return
 
     df = pd.DataFrame(news[::-1])
     df = df[(df['fid'] > max_id)]
@@ -108,8 +105,10 @@ def live_news():
 
     df = df.replace('', np.nan)  # filtered_news has already removed code = ''
     df = df.dropna(subset=['code'])
-    df['score'] = df['content'].apply(lambda row: insula.get_news_sentiment(row))
+    if len(df) == 0:
+        return
 
+    df['score'] = df['content'].apply(lambda row: insula.get_news_sentiment(row))
     old_weight = watcher.get_code_weight()
     new_weight = _split_code_score(df, old_weight)
     watcher.update_code_weight(new_weight)
@@ -216,7 +215,7 @@ scrape news for today's dawn + calculate news_weight
 
 scheduler.add_job(func=update_news, kwargs={'is_history': True}, trigger='cron',
                   hour=2, minute=1, day_of_week='mon-fri')  # for yesterday and before
-# for today's dawn TODO not sure yet
+# for today's dawn
 scheduler.add_job(func=update_news, kwargs={'is_history': False}, trigger='cron',
                   hour=8, minute=50, day_of_week='mon-fri')
 scheduler.add_job(func=live_news, trigger='cron',
@@ -226,10 +225,8 @@ scheduler.add_job(func=live_news, trigger='cron',
 # AHAHAHAH watch out for news later than 15:00
 
 scheduler.add_job(func=sync_weight, trigger='cron',
-                  hour='10,13,14', minute='*/30', day_of_week='mon-fri')
+                  hour='10,11,13,14', minute=30, day_of_week='mon-fri')
 scheduler.add_job(func=sync_weight, trigger='cron',
-                  hour='9,11', minute='30', day_of_week='mon-fri')
-scheduler.add_job(func=sync_weight, trigger='cron',
-                  hour='15', minute='0', day_of_week='mon-fri')
+                  hour='10,13,14,15', minute=0, day_of_week='mon-fri')
 
 scheduler.start()
