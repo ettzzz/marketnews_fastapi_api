@@ -201,6 +201,7 @@ def sync_weight():
     call_bot_dispatch('probius', '/', text)
     his_operator.insert_weight_data(weights_dict, date_time_str)
 
+
 # start update news as a new day
 scheduler.add_job(func=update_news, kwargs={'is_history': True}, trigger='cron',
                   day_of_week='mon-fri', hour=2, minute=1, jitter=60)  # for yesterday and before
@@ -208,13 +209,13 @@ scheduler.add_job(func=update_news, kwargs={'is_history': True}, trigger='cron',
 scheduler.add_job(func=update_news, kwargs={'is_history': False}, trigger='cron',
                   day_of_week='mon-fri', hour=8, minute=50, jitter=5)
 scheduler.add_job(func=live_news, trigger='cron', day_of_week='mon-fri',
-                  hour='9-14', minute='*/5', second=30) # why? because there could be some dqn operations
+                  hour='9-14', minute='*/5', second=30)  # why? because there could be some dqn operations
 scheduler.add_job(func=live_news, trigger='cron', day_of_week='mon-fri',
                   hour=15, minute=0, second=10)
 # AHAHAHAH watch out for news later than 15:00
 scheduler.add_job(func=sync_weight, trigger='cron', day_of_week='mon-fri',
                   hour='10,11,13,14', minute=30, second=30)
-scheduler.add_job(func=sync_weight, trigger='cron', day_of_week='mon-fri'
+scheduler.add_job(func=sync_weight, trigger='cron', day_of_week='mon-fri',
                   hour='10,13,14,15', minute=0, second=30)
 
 scheduler.start()
