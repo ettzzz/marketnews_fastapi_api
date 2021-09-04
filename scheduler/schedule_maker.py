@@ -139,7 +139,7 @@ def _get_latest_news(is_history, date, max_id):
     reminder = '{} page {} is_history {} updating done.'.format(date, page, is_history)
     print(reminder)
     call_bot_dispatch('probius', '/', reminder)
-    
+
     return news
 
 
@@ -175,7 +175,7 @@ def update_news(is_history):
         df = df.replace('', np.nan)
         df = df.dropna(subset=['code'])
         df['score'] = df['content'].apply(lambda row: insula.get_news_sentiment(row))
-
+        is_open_day = date in open_days
         for i in range(len(DAILY_TICKS) - 1):  # then update news_weight table
             start_time = DAILY_TICKS[i]
             end_time = DAILY_TICKS[i+1]
@@ -186,7 +186,7 @@ def update_news(is_history):
                 continue  # just make sure each time interval is valid
 
             weights_dict = _split_code_score(period_news, weights_dict)
-            if end_time[-1] == '0' and date in open_days:  # 23:59:59 is not included
+            if end_time[-1] == '0' and is_open_day:  # 23:59:59 is not included
                 his_operator.insert_weight_data(
                     weights_dict,
                     date + ' ' + end_time

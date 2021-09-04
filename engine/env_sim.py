@@ -71,6 +71,7 @@ if __name__ == "__main__":
 
     for date in date_ranger:
         print('generating', date)
+        is_open_day = date in open_days
         for i in range(len(DAILY_TICKS) - 1):
             start_time = DAILY_TICKS[i]
             end_time = DAILY_TICKS[i+1]
@@ -82,7 +83,7 @@ if __name__ == "__main__":
                 )
             sim_env.update_weight(news)
 
-            if end_time[-1] == '0' and date in open_days:
+            if end_time[-1] == '0' and is_open_day:
                 his_operator.insert_weight_data(
                     sim_env.weights_dict,
                     date + ' ' + end_time
