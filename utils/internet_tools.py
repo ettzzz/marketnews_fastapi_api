@@ -8,9 +8,9 @@ Created on Fri Aug 20 17:09:10 2021
 
 import requests
 
-from config.static_vars import STOCK_HOST, DQN_HOST, BOT_DISPATCH_ADDRESS
+from config.static_vars import STOCK_HOST, DQN_HOST, BOT_DISPATCH_ADDRESS, IS_WHOLE_STOCK
 
-def all_codes_receiver(is_train=True):
+def all_codes_receiver(is_train=not IS_WHOLE_STOCK):
     if is_train:
         api_suffix = 'all_training_codes'
     else:
