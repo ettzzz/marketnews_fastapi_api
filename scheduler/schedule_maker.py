@@ -23,7 +23,7 @@ from utils.datetime_tools import (
     timestamper,
     get_delta_date
 )
-from utils.internet_tools import call_bot_dispatch
+from utils.internet_tools import call_bot_dispatch, all_open_days_receiver
 from config.static_vars import DAILY_TICKS
 from engine.brain import SCD
 
@@ -89,8 +89,6 @@ def _split_code_score(df, old_dict=None):
 
 def live_news():
     today = get_today_date()
-    year = today[:4]
-
     max_id = his_operator.get_latest_news_id(source=source)
     params = ys.get_params(page=1, date=today)
     news = ys.get_news(params)
@@ -101,6 +99,7 @@ def live_news():
         return
     # update news raw data first, redis laterm so it shouldn't be filtered now
     fetched = df[news_fields].to_numpy()
+    year = today[:4]
     his_operator.insert_news_data(fetched, year, source)
 
     df = df.replace('', np.nan)  # filtered_news has already removed code = ''
@@ -120,10 +119,35 @@ def live_news():
     call_bot_dispatch('probius', '/', text)
 
 
+def _get_latest_news(is_history, date, max_id):
+    page = 1
+    news = []
+    while True:
+        ycj_params = ys.get_params(page, date)
+        ycj_news = ys.get_news(ycj_params)
+        # print('updating', date, page, 'is_history', is_history)
+        time.sleep(random.random() + random.randint(1, 2))
+        if is_history and not ycj_news:
+            break  # if it's history and ycj_news is an empty list
+        if not is_history and reverse_timestamper(ycj_news[-1]['timestamp'], date_format) < date:
+            break  # it it's for today and last news is yesterday
+        if ycj_news[0]['fid'] <= max_id:
+            break  # we already have this batch
+        news += ycj_news
+        page += 1
+
+    reminder = '{} page {} is_history {} updating done.'.format(date, page, is_history)
+    print(reminder)
+    call_bot_dispatch('probius', '/', reminder)
+    
+    return news
+
+
 def update_news(is_history):
     today = get_today_date()
     max_id = his_operator.get_latest_news_id(source=source)
     weights_dict = his_operator.get_latest_weight_dict()
+    open_days = all_open_days_receiver() # not a good way but it works
 
     if is_history:
         max_date = his_operator.get_latest_news_date(source=source)
@@ -134,27 +158,7 @@ def update_news(is_history):
 
     dates = date_range_generator(max_date, latest_date)
     for date in dates:
-        year = date[:4]  # could be another year, ha
-        page = 1
-        news = []
-        while True:
-            ycj_params = ys.get_params(page, date)
-            ycj_news = ys.get_news(ycj_params)
-            # print('updating', date, page, 'is_history', is_history)
-            time.sleep(random.random() + random.randint(1, 2))
-            if is_history and not ycj_news:
-                break  # if it's history and ycj_news is an empty list
-            if not is_history and reverse_timestamper(ycj_news[-1]['timestamp'], date_format) < date:
-                break  # it it's for today and last news is yesterday
-            if ycj_news[0]['fid'] <= max_id:
-                break  # we already have this batch
-            news += ycj_news
-            page += 1
-
-        reminder = '{} page {} is_history {} updating done.'.format(date, page, is_history)
-        print(reminder)
-        call_bot_dispatch('probius', '/', reminder)
-
+        news = _get_latest_news(is_history, date, max_id)
         if len(news) == 0:
             continue
 
@@ -165,6 +169,7 @@ def update_news(is_history):
             continue
 
         fetched = df[news_fields].to_numpy()
+        year = date[:4]  # could be another year, ha
         his_operator.insert_news_data(fetched, year, source)  # add raw news data first
 
         df = df.replace('', np.nan)
@@ -177,17 +182,16 @@ def update_news(is_history):
             start = str(timestamper(date + ' ' + start_time, ts_format))
             end = str(timestamper(date + ' ' + end_time, ts_format))
             period_news = df[(df['timestamp'] >= start) & (df['timestamp'] < end)]
-            # print(start_time, end_time, len(period_news))
             if len(period_news) == 0:
                 continue  # just make sure each time interval is valid
 
             weights_dict = _split_code_score(period_news, weights_dict)
-            if end_time[-1] == '0':  # 23:59:59 is not included
+            if end_time[-1] == '0' and date in open_days:  # 23:59:59 is not included
                 his_operator.insert_weight_data(
                     weights_dict,
                     date + ' ' + end_time
                 )
-            else:  # when end_time is '23:59:59', decay when every day's end
+            if end_time[-1] == '9':  # when end_time is '23:59:59', decay when every day's end
                 weights_dict = {k: insula.weight_decay(v, 1) for k, v in weights_dict.items()}
 
     watcher.update_code_weight(weights_dict)  # finally update weight to redis watcher

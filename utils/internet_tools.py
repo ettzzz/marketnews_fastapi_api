@@ -24,7 +24,7 @@ def all_codes_receiver(is_train=True):
     return code_list
 
 
-def all_open_days():
+def all_open_days_receiver():
     r = requests.get(
         '{}/open_days'.format(DQN_HOST),
         timeout=15

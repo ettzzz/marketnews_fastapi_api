@@ -9,7 +9,7 @@ Created on Wed Aug 11 13:39:11 2021
 import os
 
 from .base_operator import sqliteBaseOperator
-from config.static_vars import NEWS_HISTORY_PATH
+from config.static_vars import NEWS_HISTORY_PATH, DAY_ZERO
 from utils.datetime_tools import get_today_date, timestamper, reverse_timestamper
 
 
@@ -163,13 +163,18 @@ class newsDatabaseOperator(sqliteBaseOperator):
         if not self.table_info(table_name):
             table_name = '{}_{}'.format(source, str(int(today[:4]) - 1))
 
-        latest_news_date = self.fetch_by_command(
-            "SELECT MAX(timestamp) FROM '{}' WHERE source = '{}';".format(
-                table_name,
-                source
+        try:
+            latest_news_date = self.fetch_by_command(
+                "SELECT MAX(timestamp) FROM '{}' WHERE source = '{}';".format(
+                    table_name,
+                    source
+                )
             )
-        )
-        date, _time = reverse_timestamper(latest_news_date[0][0]).split(' ')
+            date, _time = reverse_timestamper(latest_news_date[0][0]).split(' ')
+        except Exception as e:
+            print(e)
+            date = DAY_ZERO
+        
         return date
 
     def get_latest_weight_dict(self):

@@ -102,10 +102,11 @@ if __name__ == "__main__":
     import time
     import random
     from database.news_operator import newsDatabaseOperator
-    from utils.datetime_tools import date_range_generator, get_today_date
+    from utils.datetime_tools import date_range_generator, get_today_date, get_delta_date
     # from config.static_vars import DAY_ZERO
     source = 'ycj'
     today = get_today_date()
+    yesterday = get_delta_date(today, -1)
     his_operator = newsDatabaseOperator()
     
     news_fields = list(his_operator.news_fields['daily_news'].keys())
@@ -113,11 +114,10 @@ if __name__ == "__main__":
     max_date = his_operator.get_latest_news_date(source)
     
     ys = yuncaijingScrapper()
-    dates = date_range_generator(max_date, today)
+    dates = date_range_generator(max_date, yesterday) # at least yesterday is gone
 
     for date in dates:
-        print('yuncaijing', date)
-        year = date[:4]
+        print('yuncaijing getting news for', date)
         page = 1
         news = []
         while True:
@@ -128,8 +128,13 @@ if __name__ == "__main__":
             news += ycj_news
             page += 1
             time.sleep(random.random() + random.randint(1, 2))
+        
+        if len(news) == 0:
+            print('date len news is 0', date)
+            continue
 
         df = pd.DataFrame(news[::-1])  # reverse sequence for yuncaijing
         df = df[(df['fid'] > max_id)]
         fetched = df[news_fields].to_numpy()
+        year = date[:4]
         his_operator.insert_news_data(fetched, year, source)
