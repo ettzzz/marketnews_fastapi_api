@@ -5,7 +5,6 @@ import platform
 
 import torch
 
-
 OS = platform.system()
 ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
@@ -38,6 +37,7 @@ SENTI_REDIS_CONFIG = {
 
 
 HAS_CUDA = torch.cuda.is_available()
+DEVICE = 'cuda:0' if HAS_CUDA else 'cpu'
 ROBERTA_CONFIG = {
     'task': 'sentiment-analysis',
     'model': 'liam168/c2-roberta-base-finetuned-dianping-chinese',

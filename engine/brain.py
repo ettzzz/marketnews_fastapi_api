@@ -12,9 +12,7 @@ from torch.functional import F
 from transformers import pipeline
 from transformers import AutoTokenizer, AutoConfig, AutoModelForSequenceClassification
 
-from config.static_vars import ROBERTA_CONFIG, ROOT
-
-device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+from config.static_vars import ROBERTA_CONFIG, ROOT, DEVICE
 
 id_label_mapping = {
   "0": "negative",
@@ -34,11 +32,9 @@ def _init_lite_albert():
         albert_path, 
         config=config
         )
-    # model.eval()
-    model.to(device)
-    
+    model.to(DEVICE)
+    print('model initialized on {}!'.format(DEVICE))
     return tokenizer, model
-
 
 tokenizer, model = _init_lite_albert()
 
@@ -58,8 +54,8 @@ class SCD():
         token_codes = tokenizer.encode_plus(news_str)
         with torch.no_grad():
             outputs = model(
-                input_ids=torch.tensor([token_codes['input_ids']]).to(device),
-                token_type_ids = torch.tensor([token_codes['token_type_ids']]).to(device)
+                input_ids=torch.tensor([token_codes['input_ids']]).to(DEVICE),
+                token_type_ids = torch.tensor([token_codes['token_type_ids']]).to(DEVICE)
                 )
         base = F.softmax(outputs[0][0], dim=-1)
         index = base.argmax().item()
