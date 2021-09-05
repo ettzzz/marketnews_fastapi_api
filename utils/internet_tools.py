@@ -17,17 +17,18 @@ def all_codes_receiver(is_train=not IS_WHOLE_STOCK):
         api_suffix = 'all_codes'
     r = requests.get(
         '{}/{}'.format(STOCK_HOST, api_suffix),
-        timeout=15
+        timeout=10
     )
     # r.json() # actually it's a list.
     code_list = [c[0] for c in r.json()]
     return code_list
 
 
-def all_open_days_receiver():
-    r = requests.get(
+def all_open_days_receiver(start_date, end_date):
+    r = requests.post(
         '{}/open_days'.format(DQN_HOST),
-        timeout=15
+        json={'start_date': start_date, 'end_date': end_date},
+        timeout=5
     )
     date_list = r.json()['dates']
     return date_list
