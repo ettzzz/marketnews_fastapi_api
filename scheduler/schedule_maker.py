@@ -145,10 +145,10 @@ def _get_latest_news(is_history, date, max_id):
 
 def update_news(is_history):
     today = get_today_date()
+    last_month = get_delta_date(today, -30)
     max_id = his_operator.get_latest_news_id(source=source)
     weights_dict = his_operator.get_latest_weight_dict()
-    open_days = all_open_days_receiver() # not a good way but it works
-
+    open_days = all_open_days_receiver(start_date=last_month, end_date=today)
     if is_history:
         max_date = his_operator.get_latest_news_date(source=source)
         latest_date = get_delta_date(today, -1)
