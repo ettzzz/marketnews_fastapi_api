@@ -41,6 +41,7 @@ def call_bot_dispatch(to, link, text):
             'to': to,
             'link': link,
             'text': text
-        }
+        },
+        timeout=15
     )
     return r.json()

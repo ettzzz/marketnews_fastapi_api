@@ -112,11 +112,11 @@ def live_news():
     new_weight = _split_code_score(df, old_weight)
     watcher.update_code_weight(new_weight)
 
-    text = 'length of live news {}, len(old)={}, len(new)={}'.format(
-        len(df), len(old_weight), len(new_weight)
-    )
-    print(text)
-    call_bot_dispatch('probius', '/', text)
+    # text = 'length of live news {}, len(old)={}, len(new)={}'.format(
+    #     len(df), len(old_weight), len(new_weight)
+    # )
+    # print(text)
+    # call_bot_dispatch('probius', '/', text)
 
 
 def _get_latest_news(is_history, date, max_id):
@@ -136,9 +136,9 @@ def _get_latest_news(is_history, date, max_id):
         news += ycj_news
         page += 1
 
-    reminder = '{} page {} is_history {} updating done.'.format(date, page, is_history)
-    print(reminder)
-    call_bot_dispatch('probius', '/', reminder)
+    # reminder = '{} page {} is_history {} updating done.'.format(date, page, is_history)
+    # print(reminder)
+    # call_bot_dispatch('probius', '/', reminder)
 
     return news
 
@@ -200,9 +200,9 @@ def update_news(is_history):
 def sync_weight():
     date_time_str = reverse_timestamper(get_now())[:-2] + '00'
     weights_dict = watcher.get_code_weight()
-    text = 'sync data at {} with len {}'.format(date_time_str, len(weights_dict))
-    print(text)
-    call_bot_dispatch('probius', '/', text)
+    # text = 'sync data at {} with len {}'.format(date_time_str, len(weights_dict))
+    # print(text)
+    # call_bot_dispatch('probius', '/', text)
     his_operator.insert_weight_data(weights_dict, date_time_str)
 
 
