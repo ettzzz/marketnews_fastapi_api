@@ -40,6 +40,15 @@ source = 'ycj'
 ts_format = '%Y-%m-%d %H:%M:%S'
 date_format = '%Y-%m-%d'
 
+IS_OPEN_TODAY = True
+
+
+def _ask_if_open():
+    global IS_OPEN_TODAY
+    today = get_today_date()
+    who_knows = all_open_days_receiver(today, today)
+    IS_OPEN_TODAY = True if len(who_knows) > 0 else False
+
 
 def _split_code_score(df, old_dict=None):
     # just for ycj
@@ -169,11 +178,12 @@ def update_news(is_history):
 
 
 def sync_weight():
-    date_time_str = reverse_timestamper(get_now())[:-2] + '00'
-    weights_dict = watcher.get_code_weight()
-    text = 'sync data at {} with len {}'.format(date_time_str, len(weights_dict))
-    gabber.info(text)
-    his_operator.insert_weight_data(weights_dict, date_time_str)
+    if IS_OPEN_TODAY:
+        date_time_str = reverse_timestamper(get_now())[:-2] + '00'
+        weights_dict = watcher.get_code_weight()
+        text = 'sync data at {} with len {}'.format(date_time_str, len(weights_dict))
+        gabber.info(text)
+        his_operator.insert_weight_data(weights_dict, date_time_str)
 
 
 # start update news as a new day
@@ -182,6 +192,8 @@ scheduler.add_job(func=update_news, kwargs={'is_history': True}, trigger='cron',
 # for today's dawn
 scheduler.add_job(func=update_news, kwargs={'is_history': False}, trigger='cron',
                   day_of_week='mon-fri', hour=8, minute=50, jitter=5)
+scheduler.add_job(func=_ask_if_open, trigger='cron', day_of_week='mon-fri',
+                  hour=8, minute=6, second=5)  # 9:05 jitter=60 in dqn_agent
 scheduler.add_job(func=live_news, trigger='cron', day_of_week='mon-fri',
                   hour='9-14', minute='*/5', second=30)  # why? because there could be some dqn operations
 scheduler.add_job(func=live_news, trigger='cron', day_of_week='mon-fri',
