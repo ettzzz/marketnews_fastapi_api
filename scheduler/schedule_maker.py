@@ -15,6 +15,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from database.news_operator import newsDatabaseOperator
 from database.redis_watcher import redisWatcher
 from scraper.yuncaijing import yuncaijingScrapper
+from gibber import gabber
 from utils.datetime_tools import (
     reverse_timestamper,
     get_today_date,
@@ -23,7 +24,7 @@ from utils.datetime_tools import (
     timestamper,
     get_delta_date
 )
-from utils.internet_tools import call_bot_dispatch, all_open_days_receiver
+from utils.internet_tools import all_open_days_receiver
 from config.static_vars import DAILY_TICKS
 from engine.brain import SCD
 
@@ -39,34 +40,6 @@ source = 'ycj'
 ts_format = '%Y-%m-%d %H:%M:%S'
 date_format = '%Y-%m-%d'
 
-# def live_sina_news():
-#     source = 'sina'
-#     max_id = his_operator.get_latest_news_id(source=source)
-#     params = ss.get_params(_type=0)
-#     news = ss.get_news(params)
-#     filtered_news = ss.get_filtered_news(news['list'])
-
-#     df = pd.DataFrame(filtered_news[::-1])  # reverse sequence for sina
-#     df = df[(df['fid'] > max_id)]
-#     if len(df) == 0:
-#         return
-
-#     df['score'] = df['content'].apply(lambda row: insula.get_news_sentiment(row))
-#     weights_dict = dict()
-#     for idx, row in df.iterrows():
-#         codes = row['code'].split(',')
-#         for pseudo_code in codes:
-#             if pseudo_code.startswith('s') and len(pseudo_code) == 8:
-#                 real_code = pseudo_code[:2] + '.' + pseudo_code[2:]
-#                 weights_dict[real_code] = row['score']
-
-#     watcher.update_code_weight(weights_dict)  # {'code': 'score'}
-
-#     df['year'] = df['timestamp'].apply(lambda row: reverse_timestamper(row)[:4])
-#     for year, _count in df['year'].value_counts().items():
-#         fetched = df[news_fields][(df['year'] == year)].to_numpy()
-#         his_operator.insert_news_data(fetched, year, source)
-
 
 def _split_code_score(df, old_dict=None):
     # just for ycj
@@ -76,7 +49,7 @@ def _split_code_score(df, old_dict=None):
         codes = row['code'].split(',')
         for pseudo_code in codes:
             if len(pseudo_code) < 6:
-                print('yeah')
+                gabber.debug('less than 6 found {}'.format(pseudo_code))
                 continue  # not sure why there is a single stuff
             if pseudo_code.startswith('6'):
                 real_code = 'sh.' + pseudo_code
@@ -112,11 +85,10 @@ def live_news():
     new_weight = _split_code_score(df, old_weight)
     watcher.update_code_weight(new_weight)
 
-    # text = 'length of live news {}, len(old)={}, len(new)={}'.format(
-    #     len(df), len(old_weight), len(new_weight)
-    # )
-    # print(text)
-    # call_bot_dispatch('probius', '/', text)
+    text = 'length of live news {}, len(old)={}, len(new)={}'.format(
+        len(df), len(old_weight), len(new_weight)
+    )
+    gabber.info(text)
 
 
 def _get_latest_news(is_history, date, max_id):
@@ -125,7 +97,7 @@ def _get_latest_news(is_history, date, max_id):
     while True:
         ycj_params = ys.get_params(page, date)
         ycj_news = ys.get_news(ycj_params)
-        # print('updating', date, page, 'is_history', is_history)
+        gabber.debug('updating {} page {} is_history {}'.format(date, page, is_history))
         time.sleep(random.random() + random.randint(1, 2))
         if is_history and not ycj_news:
             break  # if it's history and ycj_news is an empty list
@@ -136,9 +108,8 @@ def _get_latest_news(is_history, date, max_id):
         news += ycj_news
         page += 1
 
-    # reminder = '{} page {} is_history {} updating done.'.format(date, page, is_history)
-    # print(reminder)
-    # call_bot_dispatch('probius', '/', reminder)
+    reminder = '{} page {} is_history {} updating done.'.format(date, page, is_history)
+    gabber.info(reminder)
 
     return news
 
@@ -200,9 +171,8 @@ def update_news(is_history):
 def sync_weight():
     date_time_str = reverse_timestamper(get_now())[:-2] + '00'
     weights_dict = watcher.get_code_weight()
-    # text = 'sync data at {} with len {}'.format(date_time_str, len(weights_dict))
-    # print(text)
-    # call_bot_dispatch('probius', '/', text)
+    text = 'sync data at {} with len {}'.format(date_time_str, len(weights_dict))
+    gabber.info(text)
     his_operator.insert_weight_data(weights_dict, date_time_str)
 
 
