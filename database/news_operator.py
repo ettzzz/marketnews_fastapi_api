@@ -121,6 +121,28 @@ class newsDatabaseOperator(sqliteBaseOperator):
             results.append(temp)
         return results
 
+    def get_code_weights(self, code, start_date, end_date):
+        fields = list(self.news_fields['feature'].keys())
+        fetched = self.fetch_by_command(
+            "SELECT {} FROM '{}' WHERE date BETWEEN '{}' AND '{}';".format(
+                ','.join(fields),
+                self.init_table_names['feature'],
+                start_date,
+                end_date
+            )
+        )
+        results = dict()
+        for f in fetched:
+            temp = dict(zip(fields, f))
+            weights_dict = dict(zip(eval(temp['sequence']), eval(temp['weights'])))
+            timestamp = '{} {}'.format(temp['date'], temp['time'])
+            if code in weights_dict:
+                results[timestamp] = weights_dict[code]
+            else:
+                results[timestamp] = 0
+        return results
+
+
     def _get_news(self, source, date, start_timestamp=None, end_timestamp=None):
         year = date[:4]
         table_name = '{}_{}'.format(source, year)
@@ -174,7 +196,7 @@ class newsDatabaseOperator(sqliteBaseOperator):
         except Exception as e:
             print(e)
             date = DAY_ZERO
-        
+
         return date
 
     def get_latest_weight_dict(self):
