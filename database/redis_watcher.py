@@ -22,14 +22,15 @@ def pipeline_wrapper(func):
         results = func(self, *args, **kwargs)
         pipe.execute()
         return results
+
     return wrapper
 
 
-class redisWatcher():
+class redisWatcher:
     def __init__(self, connection_config=SENTI_REDIS_CONFIG):
         self.conn = redis.StrictRedis(**connection_config)
-        self.code_weight = 'code_sentiment'  # single code
-        self.field_weight = 'field_sentiment'  # field
+        self.code_weight = "code_sentiment"  # single code
+        self.field_weight = "field_sentiment"  # field
 
     def _non_zero_mapping(self, raw_dict):
         return {k: float(v) for k, v in raw_dict.items() if float(v) != 0}
