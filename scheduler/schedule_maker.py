@@ -70,7 +70,8 @@ def _split_code_score(df, old_dict=None):
             else:
                 new_dict[real_code] = row["score"]
 
-    return new_dict
+    round_new_dict = {k: round(v, 2) for k, v in new_dict.items()}
+    return round_new_dict
 
 
 def live_news():

@@ -74,7 +74,7 @@ class SCD:
             return 0
 
     def weight_decay(self, weight_score, decay_count):
-        decay = round(weight_score * (0.7 ** decay_count), 2)
+        decay = round(weight_score * (0.63 ** decay_count), 2)  # 0.63 = 1-1/e
         if abs(decay) < 0.1:
             return 0
         else:
@@ -86,7 +86,7 @@ class SCD:
             negative_index = -1 if results["label"] == "negative" else 1
             sentimental_index = results["score"] * negative_index
         except:
-            sentimental_index = 0  # sometimes it's just throw an error
+            sentimental_index = 0  # sometimes it just throws an error
 
         if is_mapping:
             return self.weight_mapping(sentimental_index)
