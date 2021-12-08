@@ -64,6 +64,9 @@ class simEnvironment:
             k: insula.weight_decay(v, 1) for k, v in self.weights_dict.items()
         }
 
+    def round_weight(self):
+        self.weights_dict = {k: round(v, 2) for k, v in self.weights_dict.items()}
+
 
 if __name__ == "__main__":
     from config.static_vars import DAILY_TICKS
