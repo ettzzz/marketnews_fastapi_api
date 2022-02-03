@@ -11,11 +11,15 @@ class historicalWeightPost(BaseModel):
     start_date: str
     end_date: str
 
-class trainWeightPost(historicalWeightPost):
+class trainWeightPost(BaseModel):
+    start_date: str
+    end_date: str
     code: str
 
-app = FastAPI(debug=DEBUG)
+class poolNewsFeaturePost(BaseModel):
+    pass
 
+app = FastAPI(debug=DEBUG)
 
 @app.get("/{}/live_weight".format(API_PREFIX))
 def call_live_weight():
@@ -38,3 +42,7 @@ def call_train_weight(item: trainWeightPost):
     end_date = item.end_date
     results_dict = his_operator.get_code_weights(code, start_date, end_date)
     return {'results': results_dict}
+
+# @app.post("/{}/pool_news_feature".format(API_PREFIX))
+# def call_pool_news_feature(poolNewsFeaturePost):
+#     return

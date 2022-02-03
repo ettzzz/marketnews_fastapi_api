@@ -99,6 +99,7 @@ if __name__ == "__main__":
                 end_timestamp=timestamper(date + " " + end_time, "%Y-%m-%d %H:%M:%S"),
             )
             sim_env.update_weight(news)
+            sim_env.round_weight()
 
             if end_time[-1] == "0" and is_open_day:
                 his_operator.insert_weight_data(

@@ -91,6 +91,7 @@ def live_news():
 
     df = df.replace("", np.nan)  # filtered_news has already removed code = ''
     df = df.dropna(subset=["code"])
+    df = df[df["code"].str.len() == 6]
     if len(df) == 0:
         return
 
@@ -152,9 +153,9 @@ def update_news(is_history):
 
         df = pd.DataFrame(news[::-1])  # from morning till evening
         df = df[(df["fid"] > max_id)]  # make sure all news are new
-        df = df.drop_duplicates(
-            subset=["fid"], keep="first"
-        )  # drop duplicates of today's news
+        df = df.drop_duplicates(subset=["fid"], keep="first")
+        # drop duplicates of today's news
+
         if len(df) == 0:
             continue
 
@@ -164,6 +165,7 @@ def update_news(is_history):
 
         df = df.replace("", np.nan)
         df = df.dropna(subset=["code"])
+        df = df[df["code"].str.len() == 6]  # make sure there's only 1 code
         df["score"] = df["content"].apply(lambda row: insula.get_news_sentiment(row))
         is_open_day = date in open_days
         for i in range(len(DAILY_TICKS) - 1):  # then update news_weight table
