@@ -117,7 +117,15 @@ class newsDatabaseOperator(sqliteBaseOperator):
                 {
                     "date": date,
                     "time": _time,
-                    "weights_dict": dict(zip(eval(seq), weights)),
+                    "weights_dict": dict(
+                        zip(
+                            seq[1:-1].replace("'", "").replace(" ", "").split(","),
+                            [
+                                float(f)
+                                for f in weights[1:-1].replace(" ", "").split(",")
+                            ],
+                        )
+                    ),
                 }
             )
         return results
@@ -132,7 +140,12 @@ class newsDatabaseOperator(sqliteBaseOperator):
         results = dict()
         for date, _time, weights, seq in fetched:
             timestamp = " ".join([date, _time])
-            weights_dict = dict(zip(eval(seq), weights))
+            weights_dict = dict(
+                zip(
+                    seq[1:-1].replace("'", "").replace(" ", "").split(","),
+                    [float(f) for f in weights[1:-1].replace(" ", "").split(",")],
+                )
+            )
             if code in weights_dict:
                 results[timestamp] = weights_dict[code]
             else:
@@ -196,6 +209,5 @@ class newsDatabaseOperator(sqliteBaseOperator):
             )
         )
         uid, date, _time, v, k = latest_weight_query[0]
-        # latest_weight_dict = dict(zip(eval(k), eval(v)))
-        latest_weight_dict = dict(zip(k, v))
+        latest_weight_dict = dict(zip(eval(k), eval(v)))
         return latest_weight_dict
