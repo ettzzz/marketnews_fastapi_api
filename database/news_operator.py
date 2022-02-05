@@ -114,7 +114,11 @@ class newsDatabaseOperator(sqliteBaseOperator):
         results = list()
         for date, _time, weights, seq in fetched:
             results.append(
-                {"date": date, "time": _time, "weights_dict": dict(zip(seq, weights))}
+                {
+                    "date": date,
+                    "time": _time,
+                    "weights_dict": dict(zip(eval(seq), weights)),
+                }
             )
         return results
 
@@ -128,7 +132,7 @@ class newsDatabaseOperator(sqliteBaseOperator):
         results = dict()
         for date, _time, weights, seq in fetched:
             timestamp = " ".join([date, _time])
-            weights_dict = dict(zip(seq, weights))
+            weights_dict = dict(zip(eval(seq), weights))
             if code in weights_dict:
                 results[timestamp] = weights_dict[code]
             else:
