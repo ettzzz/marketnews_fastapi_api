@@ -113,21 +113,18 @@ class newsDatabaseOperator(sqliteBaseOperator):
 
         results = list()
         for date, _time, weights, seq in fetched:
-            results.append(
-                {
-                    "date": date,
-                    "time": _time,
-                    "weights_dict": dict(
-                        zip(
-                            seq[1:-1].replace("'", "").replace(" ", "").split(","),
-                            [
-                                float(f)
-                                for f in weights[1:-1].replace(" ", "").split(",")
-                            ],
-                        )
-                    ),
-                }
-            )
+            if not weights[1:-1]:
+                temp_dict = dict()
+            else:
+                temp_dict = dict(
+                    zip(
+                        seq[1:-1].replace("'", "").replace(" ", "").split(","),
+                        [float(f) for f in weights[1:-1].replace(" ", "").split(",")],
+                    )
+                )
+
+            results.append({"date": date, "time": _time, "weights_dict": temp_dict})
+
         return results
 
     def get_code_weights(self, code, start_date, end_date):
@@ -140,12 +137,15 @@ class newsDatabaseOperator(sqliteBaseOperator):
         results = dict()
         for date, _time, weights, seq in fetched:
             timestamp = " ".join([date, _time])
-            weights_dict = dict(
-                zip(
-                    seq[1:-1].replace("'", "").replace(" ", "").split(","),
-                    [float(f) for f in weights[1:-1].replace(" ", "").split(",")],
+            if not weights[1:-1]:
+                weights_dict = dict()
+            else:
+                weights_dict = dict(
+                    zip(
+                        seq[1:-1].replace("'", "").replace(" ", "").split(","),
+                        [float(f) for f in weights[1:-1].replace(" ", "").split(",")],
+                    )
                 )
-            )
             if code in weights_dict:
                 results[timestamp] = weights_dict[code]
             else:
