@@ -112,12 +112,10 @@ class newsDatabaseOperator(sqliteBaseOperator):
         )
 
         results = list()
-        for f in fetched:
-            temp = dict(zip(fields, f))
-            temp["weights_dict"] = dict(
-                zip(eval(temp["sequence"]), eval(temp["weights"]))
+        for date, _time, weights, seq in fetched:
+            results.append(
+                {"date": date, "time": _time, "weights_dict": dict(zip(seq, weights))}
             )
-            results.append(temp)
         return results
 
     def get_code_weights(self, code, start_date, end_date):
@@ -128,10 +126,9 @@ class newsDatabaseOperator(sqliteBaseOperator):
             )
         )
         results = dict()
-        for f in fetched:
-            temp = dict(zip(fields, f))
-            weights_dict = dict(zip(eval(temp["sequence"]), eval(temp["weights"])))
-            timestamp = "{} {}".format(temp["date"], temp["time"])
+        for date, _time, weights, seq in fetched:
+            timestamp = " ".join([date, _time])
+            weights_dict = dict(zip(seq, weights))
             if code in weights_dict:
                 results[timestamp] = weights_dict[code]
             else:
@@ -195,5 +192,6 @@ class newsDatabaseOperator(sqliteBaseOperator):
             )
         )
         uid, date, _time, v, k = latest_weight_query[0]
-        latest_weight_dict = dict(zip(eval(k), eval(v)))
+        # latest_weight_dict = dict(zip(eval(k), eval(v)))
+        latest_weight_dict = dict(zip(k, v))
         return latest_weight_dict
