@@ -1,40 +1,28 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+Created on Tue Jun 28 20:41:57 2022
 
-from fastapi import FastAPI
-from pydantic import BaseModel
+@author: ert
+"""
 
-from config.static_vars import API_PREFIX, DEBUG
-from scheduler.schedule_maker import watcher, his_operator
+from apscheduler.schedulers.background import BackgroundScheduler
 
-
-class historicalWeightPost(BaseModel):
-    start_date: str
-    end_date: str
-
-class trainWeightPost(historicalWeightPost):
-    code: str
-
-app = FastAPI(debug=DEBUG)
+from schedules import call_for_update
 
 
-@app.get("/{}/live_weight".format(API_PREFIX))
-def call_live_weight():
-    results = watcher.get_code_weight()
-    return results
+def main():
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(func=call_for_update, trigger="interval", minutes=5)
+    scheduler.start()
 
 
-@app.post("/{}/historical_weight".format(API_PREFIX))
-def call_historical_weight(item: historicalWeightPost):
-    start_date = item.start_date
-    end_date = item.end_date
-    results_list = his_operator.get_feature_weights(start_date, end_date)
-    return {'results': results_list}
-
-
-@app.post("/{}/train_weight".format(API_PREFIX))
-def call_train_weight(item: trainWeightPost):
-    code = item.code
-    start_date = item.start_date
-    end_date = item.end_date
-    results_dict = his_operator.get_code_weights(code, start_date, end_date)
-    return {'results': results_dict}
+if __name__ == "__main__":
+    # main()
+    call_for_update()
+    """
+    if main() is not on the run, add
+        */5 * * * * /path/to/python3 /path/to/project/main.py
+    to crontab -e
+    which means run this script every 5 minutes
+    """

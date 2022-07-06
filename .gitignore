@@ -7,7 +7,6 @@ ENV/
 env.bak/
 venv.bak/
 
-
 # Spyder project settings
 .spyproject
 
@@ -18,21 +17,8 @@ __pycache__/
 # Self generated sqlite3 db file
 *.db
 
-# Trained networks
-*.pickle
-
 # MacOS temp file
 *.DS_Store
 
-# Image files
-*.png
-*.jpg
-
-# draft txt
-draft.txt
-
-# trained models
-/models/trained
-
-# generated training data
-/models/*.txt
+# local_secrets.py
+local_secrets.py

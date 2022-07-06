@@ -5,7 +5,7 @@ import datetime
 
 DATE_FORMAT = "%Y-%m-%d"
 TIME_FORMAT = "%H:%M:%S"
-DATE_TIME_FORMAT = DATE_FORMAT + ' ' + TIME_FORMAT
+DATE_TIME_FORMAT = DATE_FORMAT + " " + TIME_FORMAT
 
 
 def struct_timestr(timestr, _format=DATE_FORMAT):
@@ -18,8 +18,11 @@ def struct_datestr(datestr, _format=DATE_FORMAT):
     return structed_date
 
 
-def get_now():
-    return round(time.time())
+def get_now(is_timestamp=True):
+    if is_timestamp:
+        return round(time.time())
+    else:
+        return datetime.datetime.now()
 
 
 def get_today_date():
@@ -38,11 +41,11 @@ def get_delta_date(date, days):
 
 
 def timestamper(time_str, _format=DATE_FORMAT):
-    '''
+    """
     time_in_str: '2016-05-27 07:07:26'
     _format: '%Y-%m-%d %H:%M:%S'
     return 1464304046
-    '''
+    """
     if _format is int:
         return int(time_str)
     else:
@@ -56,10 +59,9 @@ def reverse_timestamper(ten_digit, _format=DATE_TIME_FORMAT):
     return time_str
 
 
-def date_range_generator(start, end, step=1,
-                         format_=DATE_FORMAT,
-                         category='all',
-                         is_reverse=False):
+def date_range_generator(
+    start, end, step=1, format_=DATE_FORMAT, category="all", is_reverse=False
+):
     strptime = datetime.datetime.strptime
     strftime = datetime.datetime.strftime
     end = strftime(strptime(end, format_) + datetime.timedelta(1), format_)
@@ -73,9 +75,9 @@ def date_range_generator(start, end, step=1,
     for i in ranger:
         new_day = strptime(start, format_) + datetime.timedelta(i)
         # dates = []
-        if category == 'all':
+        if category == "all":
             yield strftime(new_day, format_)
-        elif category == 'weekend':
+        elif category == "weekend":
             if new_day.weekday() > 4:
                 yield strftime(new_day, format_)
         else:
