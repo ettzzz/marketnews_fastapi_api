@@ -50,7 +50,9 @@ def call_for_update():
                         fetched.append(n)
                 break  ##
             else:
-                fetched += ycj_news
+                for n in ycj_news:
+                    if n["code"]:
+                        fetched.append(n)
                 page += 1
                 time.sleep(0.5)
 
