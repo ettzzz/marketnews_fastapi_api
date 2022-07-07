@@ -1,2 +1,5 @@
-# marketnews_fastapi_api
- news scrapper and sentiment analysis
+# news_scrapper
+
+scrape market-related news and save them into mongoDB
+
+see main.py how to run this project
