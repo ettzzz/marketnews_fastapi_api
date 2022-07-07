@@ -26,10 +26,10 @@ class newsDatabaseOperator(BaseMongoOperator):
                 "sequence": [],
             },
             "daily_news": {
-                "fid": [],
+                "fid": [int, 0],
                 "source": [],
                 "content": [],
-                "timestamp": [],
+                "timestamp": [int, 0],
                 "tag": [],
                 "code": [],
                 "industry": [],
