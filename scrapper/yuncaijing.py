@@ -4,6 +4,7 @@ import requests
 import traceback
 
 from utils.datetime_tools import reverse_timestamper, timestamper
+from utils.gibber import gabber
 
 
 class yuncaijingScrapper:
@@ -77,7 +78,7 @@ class yuncaijingScrapper:
                 else:
                     return []  # page more than capacity
             else:
-                print(
+                gabber.error(
                     "from yuncaijingScrapper: Requesting failed! check url \n{}".format(
                         r.url
                     )
@@ -85,7 +86,7 @@ class yuncaijingScrapper:
                 return []
         except:
             e = traceback.print_exc()
-            print(
+            gabber.error(
                 "from yuncaijingScrapper: Normalizing data error with following exception:\
                   \n {}\
                   \n".format(
