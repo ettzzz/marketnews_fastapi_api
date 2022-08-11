@@ -42,7 +42,7 @@ def get_delta_date(date, days):
 
 def timestamper(time_str, _format=DATE_FORMAT):
     """
-    time_in_str: '2016-05-27 07:07:26'
+    time_str: '2016-05-27 07:07:26'
     _format: '%Y-%m-%d %H:%M:%S'
     return 1464304046
     """

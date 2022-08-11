@@ -8,7 +8,9 @@ Created on Wed Jul  6 19:36:05 2022
 
 
 from database.base_mongo import BaseMongoOperator
+
 from config.static_vars import DAY_ZERO, MONGO_URI, DB_NAME
+from utils.datetime_tools import reverse_timestamper, DATE_FORMAT
 
 
 class newsDatabaseOperator(BaseMongoOperator):
@@ -58,7 +60,7 @@ class newsDatabaseOperator(BaseMongoOperator):
         else:
             col = conn[table_name]
             res = col.find_one(sort=[("_id", -1)])
-            date = res["date"]
+            date = reverse_timestamper(res["timestamp"], _format=DATE_FORMAT)
         self.off()
         return date
 
