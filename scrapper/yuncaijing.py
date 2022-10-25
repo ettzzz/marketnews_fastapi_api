@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 
-import requests
+
+import time
 import traceback
+
+import requests
 
 from utils.datetime_tools import reverse_timestamper, timestamper
 
@@ -54,17 +57,20 @@ class yuncaijingScrapper:
         }
 
     def get_params(self, page, date):
-        params = {"page": page, "date": date}  # 2020-08-26
+        params = {"page": page, "date": date}
         return params
 
-    def get_news(self, params, standard=True):
+    def get_news(self, params, standard=True, retry=0):
+        if retry > 5:
+            return []
         date = params["date"]
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:79.0) Gecko/20100101 Firefox/79.0",
-            "Referer": "https://www.yuncaijing.com/insider/list_{}.html".format(date),
+            "Referer": f"https://www.yuncaijing.com/insider/list_{date}.html",
             "Host": "www.yuncaijing.com",
             "Origin": "https://www.yuncaijing.com",
-            "Cookie": "ycj_wafsid=wafsid_fb0db6857bc227a8ca1aa0a1bbd8c7e5; ycj_uuid=96d6792f5fb5aa66a701bb929af84d63; ycj_from_url=aHR0cHM6Ly9kdWNrZHVja2dvLmNvbS8%3D; ycj_locate=aHR0cHM6Ly93d3cueXVuY2FpamluZy5jb20v; Qs_lvt_168612=1598163066; Qs_pv_168612=3418167207889237500; Hm_lvt_b68ec780c488edc31b70f5dadf4e94f8=1598163069; PHPSESSID=4r7bm8qmcc7nm7gf0vt4borpl4; YUNSESSID=nleq71t123s2p8m6hjmqmg5c01",
+            "Cookie": "ycj_wafsid=wafsid_f05ae27d3a676375756a17201b8947ff; ycj_uuid=d29b4ebdfb6b7ec8ecda10045e3def75; ycj_from_url=aHR0cHM6Ly9kdWNrZHVja2dvLmNvbS8%3D; ycj_locate=aHR0cHM6Ly93d3cueXVuY2FpamluZy5jb20v; YUNSESSID=t1ujp7rfh67ahd9g48mbob9vh4",
+            ## !!! this cookie could affect scrapping, temporary solution: manually update
         }
         try:
             r = requests.post(url=self.base_url, data=params, headers=headers)
@@ -84,7 +90,8 @@ class yuncaijingScrapper:
                 )
                 return []
         except:
-            e = traceback.print_exc()
+            # e = traceback.print_exc()
+            e = str(params)
             print(
                 "from yuncaijingScrapper: Normalizing data error with following exception:\
                   \n {}\
@@ -92,7 +99,8 @@ class yuncaijingScrapper:
                     e
                 )
             )
-            return []
+            time.sleep(1)
+            return self.get_news(params, standard, retry + 1)
 
     def get_filtered_news(self, standard_news_list):
         filtered_news_list = []

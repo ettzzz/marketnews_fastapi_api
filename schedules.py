@@ -7,6 +7,7 @@ Created on Tue Jun 28 20:42:04 2022
 """
 
 import time
+import random
 
 from database.news_operator import newsDatabaseOperator
 from scrapper.yuncaijing import yuncaijingScrapper
@@ -18,23 +19,26 @@ from utils.datetime_tools import (
 )
 
 
-def call_for_update():
+def call_for_update(from_date=None):
     source = "ycj"
     _now = get_now(is_timestamp=False)
     today = get_today_date()
 
-    if _now.hour == 0 and _now.minute <= 5:
-        yesterday = get_delta_date(today, -1)
-        dates = date_range_generator(yesterday, today)
+    if from_date is not None:
+        dates = date_range_generator(from_date, today)
     else:
-        dates = date_range_generator(today, today)
+        if _now.hour == 0 and _now.minute <= 5:
+            yesterday = get_delta_date(today, -1)
+            dates = date_range_generator(yesterday, today)
+        else:
+            dates = date_range_generator(today, today)
 
     ys = yuncaijingScrapper()
     his_operator = newsDatabaseOperator()
-    max_id = his_operator.get_latest_news_id(source=source)
+    conn = his_operator.on()
+    max_id = his_operator.get_latest_news_id(source=source, conn=conn)
 
     fetched = list()
-    conn = his_operator.on()
     for date in dates:
         page = 1
         while True:
@@ -54,10 +58,11 @@ def call_for_update():
                     if n["code"]:
                         fetched.append(n)
                 page += 1
-                time.sleep(0.5)
+                time.sleep(1 + random.random())
 
         his_operator.insert_news_data(fetched, source, conn)
         fetched.clear()
+        print(date, f"finished with pages {page}")
 
     his_operator.off()
     return

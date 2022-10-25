@@ -40,20 +40,23 @@ class newsDatabaseOperator(BaseMongoOperator):
             },
         }
 
-    def get_latest_news_id(self, source):
-        conn = self.on()
+    def get_latest_news_id(self, source, conn=None):
+        if conn is None:
+            conn = self.on()
         table_name = source
         if not self.has_table(table_name):
-            _id = -1
+            return -1
         else:
             col = conn[table_name]
             res = col.find_one(sort=[("_id", -1)])
-            _id = res["fid"]
-        self.off()
-        return _id
+            if res is None:  ## when collection is empty:
+                return -1
+            else:
+                return res["fid"]
 
-    def get_latest_news_date(self, source):
-        conn = self.on()
+    def get_latest_news_date(self, source, conn=None):
+        if conn is None:
+            conn = self.on()
         table_name = source
         if not self.has_table(table_name):
             date = DAY_ZERO
@@ -61,10 +64,11 @@ class newsDatabaseOperator(BaseMongoOperator):
             col = conn[table_name]
             res = col.find_one(sort=[("_id", -1)])
             date = reverse_timestamper(res["timestamp"], _format=DATE_FORMAT)
-        self.off()
         return date
 
     def insert_news_data(self, fetched, source, conn):
+        if not fetched:
+            return
         table_name = source
         col = conn[table_name]
         col.insert_many(fetched)  ## happily all fetched is formatted by scrapper class
