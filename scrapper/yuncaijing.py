@@ -74,7 +74,10 @@ class yuncaijingScrapper:
         }
         try:
             r = requests.post(url=self.base_url, data=params, headers=headers)
-            if r.status_code == 200:
+            if r.status_code != 200:
+                print(f"from Scrapper: statuscode {r.status_code} check url \n{r.url}")
+                return []
+            else:
                 if r.json()["error_code"] == "0":
                     content = r.json()["data"]
                     if standard:
@@ -82,24 +85,9 @@ class yuncaijingScrapper:
                     return content
                 else:
                     return []  # page more than capacity
-            else:
-                print(
-                    "from yuncaijingScrapper: Requesting failed! check url \n{}".format(
-                        r.url
-                    )
-                )
-                return []
         except:
-            # e = traceback.print_exc()
-            e = str(params)
-            print(
-                "from yuncaijingScrapper: Normalizing data error with following exception:\
-                  \n {}\
-                  \n".format(
-                    e
-                )
-            )
-            time.sleep(1)
+            print(f"from Scrapper: param {str(params)} retry {retry+1}")
+            time.sleep(0.5)
             return self.get_news(params, standard, retry + 1)
 
     def get_filtered_news(self, standard_news_list):

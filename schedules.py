@@ -44,7 +44,8 @@ def call_for_update(from_date=None):
         while True:
             ycj_params = ys.get_params(page, date)
             ycj_news = ys.get_news(ycj_params)  ## fid is descending
-            if not ycj_news:
+            time.sleep(0.5 + random.random())
+            if len(ycj_news) == 0:
                 break  ## page is too large, empty data
             if ycj_news[0]["fid"] <= max_id:
                 break  ## the biggest fid is small/equal than max_id
@@ -52,14 +53,17 @@ def call_for_update(from_date=None):
                 for n in ycj_news:
                     if n["fid"] > max_id:
                         fetched.append(n)
-                break  ##
+                break
             else:
                 for n in ycj_news:
                     if n["code"]:
                         fetched.append(n)
                 page += 1
-                time.sleep(1 + random.random())
 
+        if len(fetched) == 0:
+            continue
+
+        max_id = max(max_id, fetched[0]["fid"])
         his_operator.insert_news_data(fetched, source, conn)
         fetched.clear()
         print(date, f"finished with pages {page}")

@@ -40,17 +40,19 @@ class newsDatabaseOperator(BaseMongoOperator):
             },
         }
 
+        self.init_news_id = {"ycj": 12253007}  ## from 2019-01-01
+
     def get_latest_news_id(self, source, conn=None):
         if conn is None:
             conn = self.on()
         table_name = source
         if not self.has_table(table_name):
-            return -1
+            return self.init_news_id[source]
         else:
             col = conn[table_name]
             res = col.find_one(sort=[("_id", -1)])
             if res is None:  ## when collection is empty:
-                return -1
+                return self.init_news_id[source]
             else:
                 return res["fid"]
 
