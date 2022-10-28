@@ -65,8 +65,8 @@ def call_for_update(from_date=None):
 
         max_id = max(max_id, fetched[0]["fid"])
         his_operator.insert_news_data(fetched, source, conn)
+        print(date, f"finished with pages {page}, news {len(fetched)}.")
         fetched.clear()
-        print(date, f"finished with pages {page}")
 
     his_operator.off()
     return

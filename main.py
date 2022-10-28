@@ -19,7 +19,7 @@ def main():
 
 if __name__ == "__main__":
     # main()
-    call_for_update(from_date="2019-01-01")
+    call_for_update()
     """
     if main() is not on the run, add
         */5 * * * * /path/to/python3 /path/to/project/main.py
