@@ -41,7 +41,7 @@ def call_for_update(from_date=None):
     fetched = list()
     for date in dates:
         page = 1
-        while True:
+        while page <= 40: ##
             ycj_params = ys.get_params(page, date)
             ycj_news = ys.get_news(ycj_params)  ## fid is descending
             time.sleep(0.5 + random.random())
