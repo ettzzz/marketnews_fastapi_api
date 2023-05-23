@@ -6,6 +6,7 @@ Created on Wed Jul  6 19:36:05 2022
 @author: ert
 """
 
+import time
 
 from database.base_mongo import BaseMongoOperator
 
@@ -16,6 +17,7 @@ from utils.datetime_tools import reverse_timestamper, DATE_FORMAT
 class newsDatabaseOperator(BaseMongoOperator):
     def __init__(self, mongo_uri=MONGO_URI, db_name=DB_NAME):
         super().__init__(mongo_uri, db_name)
+        self.chunk_size = 500
         self.init_table_names = {
             "feature": "news_weight",
         }
@@ -73,5 +75,8 @@ class newsDatabaseOperator(BaseMongoOperator):
             return
         table_name = source
         col = conn[table_name]
-        col.insert_many(fetched)  ## happily all fetched is formatted by scrapper class
+        for i in range(len(fetched)//self.chunk_size):
+            col.insert_many(fetched[i*self.chunk_size:(i+1)*self.chunk_size])  
+            ## happily all fetched is formatted by scrapper class
+            time.sleep(0.5)
         return

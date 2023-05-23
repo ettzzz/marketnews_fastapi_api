@@ -2,8 +2,8 @@
 
 import requests
 import re
+import random
 
-from utils.common_tools import get_random_tose
 from utils.datetime_tools import get_now, timestamper, DATE_TIME_FORMAT
 
 
@@ -40,7 +40,7 @@ class eastmoneyScrapper():
 
     def get_params(self):
         params = {
-            'r': str(get_random_tose()),
+            'r': str(random.random()),
             '_': str(int(get_now() * 1000))
         }
         return params

@@ -15,6 +15,7 @@ def main():
     scheduler = BackgroundScheduler()
     scheduler.add_job(func=call_for_update, trigger="interval", minutes=5)
     scheduler.start()
+    ## this is better for a very short interval schedule, e.g. less than 1 minute that crontab cannot handle
 
 
 if __name__ == "__main__":
