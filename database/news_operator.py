@@ -15,9 +15,10 @@ from utils.datetime_tools import reverse_timestamper, DATE_FORMAT
 
 
 class newsDatabaseOperator(BaseMongoOperator):
-    def __init__(self, mongo_uri=MONGO_URI, db_name=DB_NAME):
+    def __init__(self, mongo_uri=MONGO_URI, db_name=DB_NAME, safety_first=True):
         super().__init__(mongo_uri, db_name)
-        self.chunk_size = 500
+        self.safety_first = safety_first
+        self.chunk_size = 400
         self.init_table_names = {
             "feature": "news_weight",
         }
@@ -43,6 +44,27 @@ class newsDatabaseOperator(BaseMongoOperator):
         }
 
         self.init_news_id = {"ycj": 12253007}  ## from 2019-01-01
+
+    def chunk_yielder(self, data):
+        chunk = list()
+        for i, d in enumerate(data):
+            if i % self.chunk_size == 0 and i > 0:
+                yield chunk
+                del chunk [:]
+            chunk.append(d)
+        yield chunk
+        
+
+    def _safe_insert(self, data, col, retry=0):
+        if retry >= 3:
+            return
+        try:
+            col.insert_many(data)
+            time.sleep(1)
+            return
+        except:
+            time.sleep(1)
+            return self._safe_insert(data, col, retry+1)
 
     def get_latest_news_id(self, source, conn=None):
         if conn is None:
@@ -75,8 +97,11 @@ class newsDatabaseOperator(BaseMongoOperator):
             return
         table_name = source
         col = conn[table_name]
-        for i in range(len(fetched)//self.chunk_size):
-            col.insert_many(fetched[i*self.chunk_size:(i+1)*self.chunk_size])  
-            ## happily all fetched is formatted by scrapper class
-            time.sleep(0.5)
+
+        if self.safety_first == True:
+            chunks = self.chunk_yielder(fetched)
+            for data_chunk in chunks:
+                self._safe_insert(data_chunk, col)
+        else:
+            col.insert_many(fetched)
         return
