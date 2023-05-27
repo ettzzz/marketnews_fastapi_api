@@ -5,7 +5,7 @@ import os
 MONGO_URI = os.getenv("AZURE_MONGO_URI")
 DB_NAME = "offline_news"
 ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-IS_DEBUG= os.getenv("DEBUG") != "0"
+DEBUG= os.getenv("DEBUG") != "0"
 
 
 # web service
