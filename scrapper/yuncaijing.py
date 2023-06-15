@@ -7,13 +7,11 @@ import traceback
 import requests
 
 from utils.datetime_tools import reverse_timestamper, timestamper
-
+from utils.gibber import logger
 
 class yuncaijingScrapper:
     def __init__(self):
-        self.base_url = (
-            "https://www.yuncaijing.com/news/get_realtime_news/yapi/ajax.html"
-        )
+        self.base_url = "https://www.yuncaijing.com/news/get_realtime_news/yapi/ajax.html"
         self.timestamp_format = int
 
     def _get_code(self, news_dict):
@@ -75,7 +73,7 @@ class yuncaijingScrapper:
         try:
             r = requests.post(url=self.base_url, data=params, headers=headers)
             if r.status_code != 200:
-                print(f"from Scrapper: statuscode {r.status_code} check url \n{r.url}")
+                logger.fatal(f"from {__file__}: statuscode {r.status_code} check url \n{r.url}")
                 return []
             else:
                 if r.json()["error_code"] == "0":
@@ -86,7 +84,7 @@ class yuncaijingScrapper:
                 else:
                     return []  # page more than capacity
         except:
-            print(f"from Scrapper: param {str(params)} retry {retry+1}")
+            logger.error(f"from {__file__}: param {str(params)} retry {retry+1}")
             time.sleep(0.5)
             return self.get_news(params, standard, retry + 1)
 

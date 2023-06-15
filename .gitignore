@@ -20,5 +20,5 @@ __pycache__/
 # MacOS temp file
 *.DS_Store
 
-# local_secrets.py
-local_secrets.py
+# draft script
+draft.py

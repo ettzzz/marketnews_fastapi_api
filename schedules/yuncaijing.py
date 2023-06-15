@@ -17,11 +17,9 @@ from utils.datetime_tools import (
     get_delta_date,
     date_range_generator,
 )
-from utils.gibber import get_logger
+from utils.gibber import logger
 
-logger = get_logger()
-
-def call_for_update(from_date=None):
+def ycj_news_update(from_date=None):
     source = "ycj"
     _now = get_now(is_timestamp=False)
     today = get_today_date()
@@ -67,7 +65,7 @@ def call_for_update(from_date=None):
 
         max_id = max(max_id, fetched[0]["fid"])
         his_operator.insert_news_data(fetched, source, conn)
-        logger.info(f"{date} finished with pages {page}, news {len(fetched)}.")
+        logger.info(f"from {__file__}: {date} finished with pages {page}, news {len(fetched)}.")
         fetched.clear()
 
     his_operator.off()

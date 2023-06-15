@@ -66,7 +66,7 @@ class newsDatabaseOperator(BaseMongoOperator):
             time.sleep(1)
             return self._safe_insert(data, col, retry+1)
 
-    def get_latest_news_id(self, source, conn=None):
+    def get_latest_news_id(self, source, key="_id", conn=None):
         if conn is None:
             conn = self.on()
         table_name = source
@@ -74,7 +74,7 @@ class newsDatabaseOperator(BaseMongoOperator):
             return self.init_news_id[source]
         else:
             col = conn[table_name]
-            res = col.find_one(sort=[("_id", -1)])
+            res = col.find_one(sort=[(key, -1)])
             if res is None:  ## when collection is empty:
                 return self.init_news_id[source]
             else:

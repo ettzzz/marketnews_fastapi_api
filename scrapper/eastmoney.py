@@ -49,7 +49,8 @@ class eastmoneyScrapper():
         r = requests.get(
             url=self.base_url,
             params=params,
-            headers=self.headers)
+            headers=self.headers,
+            timeout=30)
         if r.status_code == 200:
             text = re.findall(r'ajaxResult=({.*})', r.text)[0]
             content = eval(text)
@@ -61,3 +62,9 @@ class eastmoneyScrapper():
         else:
             print('from eastmoneyScrapper: Requesting failed! check url \n{}'.format(r.url))
             return {}
+
+if __name__ == "__main__":
+    t = eastmoneyScrapper()
+    p = t.get_params()
+    n = t.get_news(p)
+    print(n)

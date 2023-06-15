@@ -49,4 +49,7 @@ def get_logger(debug=DEBUG):
         sh.setLevel(logging.DEBUG)
         sh.setFormatter(formatter)
         logger.addHandler(sh)
+        
     return logger
+
+logger = get_logger()

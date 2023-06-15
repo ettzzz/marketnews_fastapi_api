@@ -1,7 +1,7 @@
 pymongo==4.1.1
 requests==2.26.0
 APScheduler==3.9.1
-#apscheduler==3.7.0
+apscheduler==3.7.0
 #redis==3.5.3
 #fastapi==0.68.0
 #uvicorn==0.15.0
