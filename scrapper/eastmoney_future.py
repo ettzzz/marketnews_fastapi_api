@@ -40,7 +40,10 @@ class eastmoneyFutureScrapper:
         }
         return params
 
-    def get_news(self, params, standard=True):
+    def get_news(self, params, retry=0, standard=True):
+        if retry > 3:
+            logger.error(f"from {__file__}: network error and exceed max retry.")
+            return [], ""
         try:
             r = requests.post(
                 url=self.base_url,
@@ -56,9 +59,8 @@ class eastmoneyFutureScrapper:
             else:
                 logger.fatal(f'from {__file__}: Requesting failed! check url \n{r.url}')
                 return [], ""
-        except Exception as e:
-            logger.error(f"from {__file__}: network error {e}")
-            return [], ""
+        except:
+            return self.get_news(params, retry+1, standard=standard)
 
 if __name__ == "__main__":
     t = eastmoneyFutureScrapper()
