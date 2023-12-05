@@ -3,9 +3,12 @@ FROM python:3.8.16-slim-buster
 ENV DEBIAN_FRONTEND noninteractive
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
+ENV _DEPLOY=1
 RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
     && echo 'Asia/Shanghai' >/etc/timezone \
-    && apt-get clean && apt-get -qq update && apt-get install -yq sudo wget vim openssh-client \
+    && apt-get clean \
+    && apt-get -qq update \
+    && apt-get install -yq sudo vim  \
     && rm -rf /var/lib/apt/lists/*
 
 ## create a non-root user

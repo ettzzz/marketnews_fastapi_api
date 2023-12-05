@@ -66,4 +66,3 @@ if __name__ == "__main__":
     t = eastmoneyFutureScrapper()
     p = t.get_params()
     n, _t = t.get_news(p)
-    print(len(n))

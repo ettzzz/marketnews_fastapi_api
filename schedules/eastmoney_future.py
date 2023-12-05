@@ -47,4 +47,3 @@ def eastmoney_future_update(from_date=None):
 
 if __name__ == "__main__":
     eastmoney_future_update()
-    print("done")

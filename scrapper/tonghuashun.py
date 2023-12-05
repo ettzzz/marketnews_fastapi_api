@@ -3,6 +3,7 @@
 import requests
 
 from utils.datetime_tools import reverse_timestamper
+from utils.gibber import logger
 
 class tonghuashunScrapper():
     def __init__(self):
@@ -61,7 +62,7 @@ class tonghuashunScrapper():
                 content = cleaned_list
             return content
         else:
-            print('from tonghuashunScrapper: Requesting failed! check url \n{}'.format(r.url))
+            logger.error('from tonghuashunScrapper: Requesting failed! check url \n{}'.format(r.url))
             return {}
 
 

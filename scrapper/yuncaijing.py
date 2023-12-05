@@ -84,7 +84,7 @@ class yuncaijingScrapper:
                 else:
                     return []  # page more than capacity
         except:
-            logger.error(f"from {__file__}: param {str(params)} retry {retry+1}")
+            logger.info(f"from {__file__}: param {str(params)} retry {retry+1}")
             time.sleep(0.5)
             return self.get_news(params, standard, retry + 1)
 

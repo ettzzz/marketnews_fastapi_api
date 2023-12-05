@@ -4,6 +4,7 @@ import requests
 import re
 
 from utils.datetime_tools import timestamper, DATE_TIME_FORMAT
+from utils.gibber import logger
 
 
 class sinaScrapper():
@@ -28,7 +29,7 @@ class sinaScrapper():
             ext = eval(news_dict['ext'])
             code = ','.join(list(map(lambda x: x['symbol'], ext['stocks'])))
         except Exception as e:
-            print('sina code extracting error', e)
+            logger.error('sina code extracting error', e)
             code = ''
 
         return {'fid': fid,
@@ -100,10 +101,10 @@ class sinaScrapper():
                     content['list'] = cleaned_list
                 return content
             else:
-                print('from sinaScrapper: Requesting failed! check url \n{}'.format(r.url))
+                logger.error('from sinaScrapper: Requesting failed! check url \n{}'.format(r.url))
                 return {}
         except Exception as e:
-            print('from sinaScrapper: Normalizing data error with folling exception:\
+            logger.error('from sinaScrapper: Normalizing data error with folling exception:\
                   \n {}\
                   \n'.format(e))
             return {}

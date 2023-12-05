@@ -5,6 +5,7 @@ import re
 import random
 
 from utils.datetime_tools import get_now, timestamper, DATE_TIME_FORMAT
+from utils.gibber import logger
 
 
 class eastmoneyScrapper():
@@ -60,11 +61,10 @@ class eastmoneyScrapper():
                 content = cleaned_list
             return content
         else:
-            print('from eastmoneyScrapper: Requesting failed! check url \n{}'.format(r.url))
+            logger.error('from eastmoneyScrapper: Requesting failed! check url \n{}'.format(r.url))
             return {}
 
 if __name__ == "__main__":
     t = eastmoneyScrapper()
     p = t.get_params()
     n = t.get_news(p)
-    print(n)

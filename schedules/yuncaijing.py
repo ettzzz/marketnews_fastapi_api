@@ -9,6 +9,8 @@ Created on Tue Jun 28 20:42:04 2022
 import time
 import random
 
+import sys
+sys.path.append("/home/ert/Desktop/git_repos/news_scrapper")
 from database.news_operator import newsDatabaseOperator
 from scrapper.yuncaijing import yuncaijingScrapper
 from utils.datetime_tools import (
@@ -44,6 +46,7 @@ def ycj_news_update(from_date=None):
         while page <= 40: ##
             ycj_params = ys.get_params(page, date)
             ycj_news = ys.get_news(ycj_params)  ## fid is descending
+            print(date, len(ycj_news))
             time.sleep(0.5 + random.random())
             if len(ycj_news) == 0:
                 break  ## page is too large, empty data
@@ -70,3 +73,7 @@ def ycj_news_update(from_date=None):
 
     his_operator.off()
     return
+
+
+if __name__ == "__main__":
+    ycj_news_update("2023-02-02")
