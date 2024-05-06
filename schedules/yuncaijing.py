@@ -46,8 +46,8 @@ def ycj_news_update(from_date=None):
         while page <= 40: ##
             ycj_params = ys.get_params(page, date)
             ycj_news = ys.get_news(ycj_params)  ## fid is descending
-            print(date, len(ycj_news))
-            time.sleep(0.5 + random.random())
+            logger.debug(f"{date},{len(ycj_news)}")
+            time.sleep(15 + random.random())
             if len(ycj_news) == 0:
                 break  ## page is too large, empty data
             if ycj_news[0]["fid"] <= max_id:
@@ -76,4 +76,4 @@ def ycj_news_update(from_date=None):
 
 
 if __name__ == "__main__":
-    ycj_news_update("2023-02-02")
+    ycj_news_update("2024-04-12")

@@ -12,8 +12,8 @@ from schedules.yuncaijing import ycj_news_update
 from schedules.eastmoney_future import eastmoney_future_update
 
 if __name__ == "__main__":
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(func=ycj_news_update, trigger="interval", minutes=5)
+    scheduler = BackgroundScheduler({'apscheduler.job_defaults.max_instances': 2})
+    scheduler.add_job(func=ycj_news_update, trigger="interval", minutes=45)
     # scheduler.add_job(func=eastmoney_future_update, trigger="interval", minutes=5)
     scheduler.start()
     

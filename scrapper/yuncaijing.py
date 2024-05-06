@@ -67,7 +67,7 @@ class yuncaijingScrapper:
             "Referer": f"https://www.yuncaijing.com/insider/list_{date}.html",
             "Host": "www.yuncaijing.com",
             "Origin": "https://www.yuncaijing.com",
-            "Cookie": "ycj_wafsid=wafsid_f05ae27d3a676375756a17201b8947ff; ycj_uuid=d29b4ebdfb6b7ec8ecda10045e3def75; ycj_from_url=aHR0cHM6Ly9kdWNrZHVja2dvLmNvbS8%3D; ycj_locate=aHR0cHM6Ly93d3cueXVuY2FpamluZy5jb20v; YUNSESSID=t1ujp7rfh67ahd9g48mbob9vh4",
+            "Cookie": "ycj_wafsid=wafsid_46ff99c4adafe233542259f3a27c8b91; PHPSESSID=7vver9fpgn9qglga8ub8ocj7e2; ycj_uuid=4399c380cf214ce7dba1a623afb42a7d; ycj_from_url=aHR0cHM6Ly93d3cueXVuY2FpamluZy5jb20vaW5zaWRlci9tYWluLmh0bWw%3D; ycj_locate=aHR0cHM6Ly93d3cueXVuY2FpamluZy5jb20vd2FmX2F1dGgvY2hlY2tfY29kZV9wYWdlLmh0bWw%3D; YUNSESSID=c967fqepshldmb4ijq3iaghfo2; wx_state=9t3Wlxk7HaM2xvdq",
             ## !!! this cookie could affect scrapping, temporary solution: manually update
         }
         try:
@@ -85,7 +85,7 @@ class yuncaijingScrapper:
                     return []  # page more than capacity
         except:
             logger.info(f"from {__file__}: param {str(params)} retry {retry+1}")
-            time.sleep(0.5)
+            time.sleep(4)
             return self.get_news(params, standard, retry + 1)
 
     def get_filtered_news(self, standard_news_list):
